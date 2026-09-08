@@ -1,4 +1,9 @@
+// app.config.js
 module.exports = ({ config }) => {
+  // ✅ Debug: confirm env vars are loaded
+  console.log("[app.config] PUBLISH_KEY:", process.env.PUBLISH_KEY?.substring(0, 12));
+  console.log("[app.config] PRICE_ID:", process.env.PRICE_ID);
+
   return {
     ...config,
     name: "gym-app",
@@ -56,6 +61,13 @@ module.exports = ({ config }) => {
     },
 
     plugins: [
+      // ✅ Pass the REAL key to the native plugin
+      [
+        "./plugins/withStripeInit",
+        {
+          publishableKey: process.env.PUBLISH_KEY, // ← use env var, not placeholder
+        },
+      ],
       [
         "@stripe/stripe-react-native",
         {
@@ -118,9 +130,9 @@ module.exports = ({ config }) => {
       EXPO_PUBLIC_WEB_ID: process.env.EXPO_PUBLIC_WEB_ID,
       EXPO_PUBLIC_SECRET_KEY: process.env.EXPO_PUBLIC_SECRET_KEY,
       EXPO_PUBLIC_LOG: process.env.EXPO_PUBLIC_LOG || "true",
+      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
 
-      GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
-
+      // ✅ Stripe keys
       PRICE_ID: process.env.PRICE_ID,
       PRICE_ID_TEST: process.env.PRICE_ID_TEST,
       PUBLISH_KEY: process.env.PUBLISH_KEY,

@@ -1,5 +1,5 @@
+// app/_layout.tsx
 import "expo-constants";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
   DarkTheme,
   DefaultTheme,
@@ -20,10 +20,13 @@ import { RealmProvider } from "@/database/RealmProvider";
 import { ActivityIndicator, View } from "react-native";
 import { AppInitProvider } from "@/contexts/appInitializerContext";
 import useCustomStyle from "@/hooks/useCustomStyle";
+import { StripeProvider, initStripe } from "@stripe/stripe-react-native";
+import { PUBLISH_KEY } from "@/shared/constants/envConstants";
+import FontAwesome from "@expo/vector-icons/build/FontAwesome";
+import { log } from "@/shared/utils/log";
 
 export { ErrorBoundary } from "expo-router";
 
-// Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 const toastConfig = {
@@ -42,6 +45,66 @@ const toastConfig = {
     />
   ),
 };
+
+export default function RootLayout() {
+  const [loaded, fontError] = useFonts({
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    ...FontAwesome.font,
+  });
+
+  const [stripeReady, setStripeReady] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (fontError) throw fontError;
+  }, [fontError]);
+
+  useEffect(() => {
+    const init = async () => {
+      // ✅ Guard against null/undefined publishable key
+      if (!PUBLISH_KEY) {
+        log(
+          "[Stripe] PUBLISH_KEY is null/undefined! " +
+            "Check your .env file has EXPO_PUBLIC_PUBLISH_KEY set.",
+        );
+        setStripeError("Stripe key missing");
+        return;
+      }
+
+      log(
+        "[Stripe] Initializing with key:",
+        PUBLISH_KEY.substring(0, 12) + "...",
+      );
+
+      try {
+        await initStripe({
+          publishableKey: PUBLISH_KEY,
+        });
+        log("[Stripe] initStripe completed successfully");
+        setStripeReady(true);
+      } catch (e) {
+        log("[Stripe] initStripe failed:", e);
+        setStripeError(String(e));
+      }
+    };
+
+    init();
+  }, []);
+
+  if (!loaded || (!stripeReady && !stripeError)) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <StripeProvider publishableKey={PUBLISH_KEY ?? ""}>
+      <RootLayoutNav />
+    </StripeProvider>
+  );
+}
 
 function RootLayoutNav() {
   const { colors } = useCustomStyle();
@@ -70,25 +133,4 @@ function RootLayoutNav() {
       </AuthProvider>
     </ReduxProvider>
   );
-}
-
-export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-    ...FontAwesome.font,
-  });
-
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
-
-  if (!loaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  return <RootLayoutNav />;
 }

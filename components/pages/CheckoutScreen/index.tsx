@@ -143,7 +143,7 @@ export default function CheckoutScreen({
           {t(AppMessagesEnum.SUBSCRIPTION_PREMIUM_PLAIN)}
         </Text>
         <Text style={[styles.subtitle, customStyle.subtitle]}>
-          R$ XX,00 / {t(AppMessagesEnum.MONTH)}
+          R$ 1,00 / {t(AppMessagesEnum.MONTH)}
         </Text>
       </View>
 
@@ -180,7 +180,7 @@ export default function CheckoutScreen({
 
       {/* Botão confirmar */}
       <Button
-        title={`${t(AppMessagesEnum.SUBSCRIPTION_CONFIRM_SUBSCRIPTION)} - R$ XX,00/mês`}
+        title={`${t(AppMessagesEnum.SUBSCRIPTION_CONFIRM_SUBSCRIPTION)} - R$ 1,00/mês`}
         onPress={handleSubscribe}
         severity={SeverityEnum.PRIMARY}
         disabled={loading || !cardComplete || !billingDay}

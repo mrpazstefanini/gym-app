@@ -11,6 +11,7 @@ import useCustomStyle from "@/hooks/useCustomStyle";
 import { fetchSubscription } from "@/redux/actions/subscriptionActions";
 import { RootReduxState } from "@/redux";
 import { SubscriptionsStatusEnum } from "@/shared/enum/SubscriptionsStatusEnum";
+import { log } from "@/shared/utils/log";
 
 export default function StacksLayout() {
   const { colors } = useCustomStyle();
@@ -84,6 +85,8 @@ export default function StacksLayout() {
     }
   }, [authState.isLoggedIn, authState.loginMessage, dispatch]);
 
+  log("1 subscriptionList", subscriptionList);
+
   // 1. Aguarda authContext inicializar
   if (!authState.isReady) {
     return null;
@@ -104,8 +107,11 @@ export default function StacksLayout() {
     return <Redirect href="/(subscription)/newSubscription" />;
   }
 
+  log("2 subscriptionList", subscriptionList);
+
   // 5. Sem subscription ativa → gerenciar subscription
   if (
+    !subscriptionList ||
     !subscriptionList.some((subscription) =>
       [
         SubscriptionsStatusEnum.ACTIVE,

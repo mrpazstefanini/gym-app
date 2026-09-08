@@ -3,17 +3,39 @@ echo ========================================
 echo  Gerando APK de DESENVOLVIMENTO
 echo ========================================
 
+REM Limpar variaveis que interferem de outros projetos
+set JAVA_OPTS=
+set "javax.net.ssl.trustStore="
+set "javax.net.ssl.trustStorePassword="
+set "javax.net.ssl.trustStoreType="
+set "javax.net.ssl.keyStore="
+set "javax.net.ssl.keyStorePassword="
+
 REM Define NODE_ENV
 set NODE_ENV=development
 
+REM Navegar para android
+cd android
+
 REM Limpar builds anteriores
 echo Limpando builds anteriores...
-cd android
-call gradlew clean
+call gradlew clean --no-daemon --no-build-cache
+if %ERRORLEVEL% neq 0 (
+    echo Erro ao executar clean!
+    cd ..
+    pause
+    exit /b 1
+)
 
 REM Gerar APK de desenvolvimento
 echo Gerando APK de desenvolvimento...
-call gradlew assembleDebug
+call gradlew assembleDebug --no-daemon
+if %ERRORLEVEL% neq 0 (
+    echo Erro ao gerar APK!
+    cd ..
+    pause
+    exit /b 1
+)
 
 REM Verificar se foi gerado
 if not exist app\build\outputs\apk\debug\app-debug.apk (
