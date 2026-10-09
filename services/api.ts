@@ -7,9 +7,10 @@ import { AuthServices } from "./AuthServices";
 import { log } from "@/shared/utils/log";
 import { logoutUser } from "@/redux/slices/authSlice";
 import { API_TIMEOUT } from "@/shared/constants/general";
+import { BASE_URL } from "@/shared/constants/envConstants";
 
 const api = axios.create({
-  baseURL: "https://gym-api-two.vercel.app/",
+  baseURL: BASE_URL,
   timeout: API_TIMEOUT,
 });
 

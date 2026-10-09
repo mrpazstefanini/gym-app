@@ -9,6 +9,7 @@ import userReducer, { UserState } from "@/redux/slices/userSlice";
 import languageReducer, { LanguageState } from "./slices/languageSlice";
 import authReducer, { AuthState } from "@/redux/slices/authSlice";
 import exerciseReducer, { ExerciseState } from "./slices/exerciseSlice";
+import stripeReducer, { StripeState } from "./slices/stripeSlice";
 import trainingReducer, { TrainingState } from "./slices/trainingSlice";
 import exerciseHistoryReducer, {
   ExerciseHistoryState,
@@ -40,6 +41,7 @@ type ReducerType = {
   group: GroupState;
   gpsMetricsTemp: GpsMetricsTempLocalState;
   subscription: SubscriptionState;
+  stripe: StripeState;
 };
 
 const rootReducer: ReducerType = {
@@ -54,6 +56,7 @@ const rootReducer: ReducerType = {
   group: groupReducer,
   gpsMetricsTemp: gpsMetricsTempLocalReducer,
   subscription: subscriptionReducer,
+  stripe: stripeReducer,
 };
 
 export const setDatabaseService = (service: LocalDatabaseServices) => {

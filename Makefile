@@ -41,8 +41,36 @@ buildPreview:
 	@echo "Building the project locally..."
 	@npm run build:preview
 	
-dev: # npx expo run:android
-	@npx expo run:android
+dev:
+	@echo " Configurando ADB tunnel..."
+	@adb reverse tcp:8081 tcp:8081
+	@adb reverse tcp:8082 tcp:8082
+	@adb reverse tcp:19000 tcp:19000
+	@adb reverse tcp:19001 tcp:19001
+	@echo " Compilando e instalando..."
+	@npx expo run:android --localhost
+
+start:
+	@make tunnel
+	@echo " Configurando ADB tunnel..."
+	@adb reverse tcp:8081 tcp:8081
+	@adb reverse tcp:8082 tcp:8082
+	@adb reverse tcp:19000 tcp:19000
+	@adb reverse tcp:19001 tcp:19001
+	@echo " Tunnel ativo"
+	@echo " Iniciando Metro..."
+	@npx expo start --dev-client --localhost
+
+tunnel:
+	@adb reverse tcp:8081 tcp:8081
+	@adb reverse tcp:8082 tcp:8082
+	@adb reverse tcp:19000 tcp:19000
+	@adb reverse tcp:19001 tcp:19001
+	@echo " Portas redirecionadas:"
+	@adb reverse --list
+	
+devices:
+	@adb devices
 
 expoDoctor: # npx expo doctor
 	@npx expo doctor

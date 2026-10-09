@@ -1,63 +1,54 @@
 // plugins/withStripeInit.js
-const {
-  withMainApplication,
-  withAppDelegate,
-  createRunOncePlugin,
-} = require("@expo/config-plugins");
+const { withMainApplication } = require("@expo/config-plugins");
 
-// ─── ANDROID ───────────────────────────────────────────────
-const withStripeAndroid = (config, { publishableKey }) => {
+/**
+ * Plugin Stripe para Expo.
+ *
+ * NÃO injeta PaymentConfiguration no MainApplication.kt.
+ * A inicialização do Stripe é feita 100% no JS:
+ *   - initStripe()     → _layout.tsx
+ *   - StripeProvider   → _layout.tsx
+ *   - initStripe()     → CheckoutScreen (troca dinâmica teste/real)
+ *
+ * Este plugin apenas LIMPA qualquer resíduo de inicialização nativa
+ * que possa ter sido injetado por versões anteriores.
+ */
+module.exports = function withStripeInit(config, { publishableKey } = {}) {
+  const mode = publishableKey?.startsWith("pk_live")
+    ? "🔴 PRODUÇÃO"
+    : "🧪 TESTE";
+
+  console.log(
+    publishableKey
+      ? `[withStripeInit] ✅ Stripe (${mode}): ${publishableKey.substring(0, 20)}... — inicialização via JS`
+      : `[withStripeInit] ⚠️  publishableKey não fornecida — verifique o .env`
+  );
+
   return withMainApplication(config, (mod) => {
     let contents = mod.modResults.contents;
 
-    if (!contents.includes("import com.stripe.android.PaymentConfiguration")) {
-      contents = contents.replace(
-        "import android.app.Application",
-        "import android.app.Application\nimport com.stripe.android.PaymentConfiguration"
-      );
-    }
+    // ── Remove import do Stripe (se existir de versão anterior) ──────────
+    contents = contents.replace(
+      /^import com\.stripe\.android\.PaymentConfiguration\n?/gm,
+      ""
+    );
 
-    if (!contents.includes("PaymentConfiguration.init")) {
-      contents = contents.replace(
-        "super.onCreate()",
-        `super.onCreate()\n    PaymentConfiguration.init(applicationContext, "${publishableKey}")`
-      );
-    }
+    // ── Remove bloco comentado do plugin anterior ─────────────────────────
+    contents = contents.replace(
+      /\n\s*\/\/ \[Stripe\] Inicializado pelo withStripeInit plugin\n/g,
+      "\n"
+    );
 
-    mod.modResults.contents = contents;
-    return mod;
-  });
-};
+    // ── Remove qualquer PaymentConfiguration.init() residual ──────────────
+    contents = contents.replace(
+      /\n?\s*PaymentConfiguration\.init\([^)]+\)\n?/g,
+      "\n"
+    );
 
-// ─── IOS ───────────────────────────────────────────────────
-const withStripeIos = (config, { publishableKey }) => {
-  return withAppDelegate(config, (mod) => {
-    let contents = mod.modResults.contents;
-
-    if (!contents.includes("import Stripe")) {
-      contents = contents.replace(
-        "import Expo",
-        "import Expo\nimport Stripe"
-      );
-    }
-
-    if (!contents.includes("StripeAPI.defaultPublishableKey")) {
-      contents = contents.replace(
-        "return super.application(application, didFinishLaunchingWithOptions: launchOptions)",
-        `StripeAPI.defaultPublishableKey = "${publishableKey}"\n    return super.application(application, didFinishLaunchingWithOptions: launchOptions)`
-      );
-    }
+    // ── Remove linhas em branco duplas geradas pela limpeza ───────────────
+    contents = contents.replace(/\n{3,}/g, "\n\n");
 
     mod.modResults.contents = contents;
     return mod;
   });
 };
-
-// ─── PLUGIN PRINCIPAL ──────────────────────────────────────
-const withStripeInit = (config, props) => {
-  config = withStripeAndroid(config, props);
-  config = withStripeIos(config, props);
-  return config;
-};
-
-module.exports = createRunOncePlugin(withStripeInit, "withStripeInit", "1.0.0");

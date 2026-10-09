@@ -11,8 +11,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { useColorScheme } from "@/components/custom/useColorScheme";
 import { AuthProvider } from "@/contexts/authContext";
-import { Provider as ReduxProvider } from "react-redux";
-import { store } from "@/redux";
+import { Provider as ReduxProvider, useSelector } from "react-redux";
+import { RootReduxState, store } from "@/redux";
 import { OverlayProvider } from "@/contexts/overlayContext";
 import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
 import { StatusBar } from "expo-status-bar";
@@ -21,7 +21,7 @@ import { ActivityIndicator, View } from "react-native";
 import { AppInitProvider } from "@/contexts/appInitializerContext";
 import useCustomStyle from "@/hooks/useCustomStyle";
 import { StripeProvider, initStripe } from "@stripe/stripe-react-native";
-import { PUBLISH_KEY } from "@/shared/constants/envConstants";
+import { PUBLISH_KEY, PUBLISH_KEY_TEST } from "@/shared/constants/envConstants";
 import FontAwesome from "@expo/vector-icons/build/FontAwesome";
 import { log } from "@/shared/utils/log";
 
@@ -47,49 +47,58 @@ const toastConfig = {
 };
 
 export default function RootLayout() {
+  return (
+    <ReduxProvider store={store}>
+      <StripeWrapper />
+    </ReduxProvider>
+  );
+}
+
+// app/_layout.tsx
+function StripeWrapper() {
   const [loaded, fontError] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     ...FontAwesome.font,
   });
 
+  const { isTestMode } = useSelector((state: RootReduxState) => state.stripe);
   const [stripeReady, setStripeReady] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
+
+  // ✅ Sempre começa com a chave de teste no layout raiz
+  // A troca dinâmica acontece no CheckoutScreen via initStripe()
+  const publishableKey = isTestMode
+    ? (PUBLISH_KEY_TEST ?? "")
+    : (PUBLISH_KEY ?? "");
 
   useEffect(() => {
     if (fontError) throw fontError;
   }, [fontError]);
 
+  // ✅ Reinicializa quando isTestMode muda
   useEffect(() => {
     const init = async () => {
-      // ✅ Guard against null/undefined publishable key
-      if (!PUBLISH_KEY) {
-        log(
-          "[Stripe] PUBLISH_KEY is null/undefined! " +
-            "Check your .env file has EXPO_PUBLIC_PUBLISH_KEY set.",
-        );
+      if (!publishableKey) {
+        log("[Stripe] publishableKey ausente! Verifique o .env");
         setStripeError("Stripe key missing");
         return;
       }
 
-      log(
-        "[Stripe] Initializing with key:",
-        PUBLISH_KEY.substring(0, 12) + "...",
-      );
+      const mode = publishableKey.startsWith("pk_live") ? "REAL" : "TESTE";
+      log(`[Stripe] Inicializando (${mode}):`, publishableKey.substring(0, 20) + "...");
 
       try {
-        await initStripe({
-          publishableKey: PUBLISH_KEY,
-        });
-        log("[Stripe] initStripe completed successfully");
+        await initStripe({ publishableKey });
+        log("[Stripe] initStripe OK");
         setStripeReady(true);
       } catch (e) {
-        log("[Stripe] initStripe failed:", e);
+        log("[Stripe] initStripe FALHOU:", e);
         setStripeError(String(e));
       }
     };
 
     init();
-  }, []);
+  }, [publishableKey]); // ← depende de publishableKey, não []
 
   if (!loaded || (!stripeReady && !stripeError)) {
     return (
@@ -100,7 +109,7 @@ export default function RootLayout() {
   }
 
   return (
-    <StripeProvider publishableKey={PUBLISH_KEY ?? ""}>
+    <StripeProvider publishableKey={publishableKey}>
       <RootLayoutNav />
     </StripeProvider>
   );
@@ -111,26 +120,24 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <ReduxProvider store={store}>
-      <AuthProvider>
-        <RealmProvider>
-          <OverlayProvider>
-            <AppInitProvider>
-              <ThemeProvider
-                value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-              >
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="login" />
-                  <Stack.Screen name="(authenticated)" />
-                  <Stack.Screen name="(subscription)" />
-                </Stack>
-                <StatusBar backgroundColor={colors.background} />
-                <Toast config={toastConfig} />
-              </ThemeProvider>
-            </AppInitProvider>
-          </OverlayProvider>
-        </RealmProvider>
-      </AuthProvider>
-    </ReduxProvider>
+    <AuthProvider>
+      <RealmProvider>
+        <OverlayProvider>
+          <AppInitProvider>
+            <ThemeProvider
+              value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+            >
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="login" />
+                <Stack.Screen name="(authenticated)" />
+                <Stack.Screen name="(subscription)" />
+              </Stack>
+              <StatusBar backgroundColor={colors.background} />
+              <Toast config={toastConfig} />
+            </ThemeProvider>
+          </AppInitProvider>
+        </OverlayProvider>
+      </RealmProvider>
+    </AuthProvider>
   );
 }

@@ -1,6 +1,3 @@
-import React, { useMemo, useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
-import { CardField, useStripe } from "@stripe/stripe-react-native";
 import Text from "@/components/custom/Text";
 import { PRICE_ID, PRICE_ID_TEST } from "@/shared/constants/envConstants";
 import { RootReduxState } from "@/redux";
@@ -15,6 +12,13 @@ import { SeverityEnum } from "@/shared/enum/SeverityEnum";
 import { useApi } from "@/hooks/useApi";
 import { useRouter } from "expo-router";
 import BillingDayPicker from "@/components/custom/BillingDayPicker";
+import { log } from "@/shared/utils/log";
+
+// components/pages/CheckoutScreen/index.tsx
+import React, { useMemo, useState, useEffect } from "react";
+import { View, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import { CardField, useStripe, initStripe } from "@stripe/stripe-react-native";
+import { PUBLISH_KEY, PUBLISH_KEY_TEST } from "@/shared/constants/envConstants";
 
 type CheckoutScreenProps = {
   reloadPageAfterPayment?: boolean;
@@ -36,31 +40,35 @@ export default function CheckoutScreen({
   const [loading, setLoading] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
 
-  const customStyle = useMemo(
-    () => ({
-      container: { backgroundColor: colors.background },
-      subtitle: { color: colors.gray600 },
-      hint: { color: colors.gray400 },
-      infoContainer: { backgroundColor: colors.gray200 },
-      infoText: { color: colors.notification.info },
-      cardField: {
-        backgroundColor: colors.background,
-        textColor: colors.text,
-        borderColor: colors.border,
-        placeholderColor: colors.gray300,
-        borderWidth: 1,
-        borderRadius: 8,
-        fontSize: 16,
-      },
-    }),
-    [colors],
-  );
+  // ✅ Novo: controla se o Stripe foi reinicializado com a chave correta
+  const [stripeInitialized, setStripeInitialized] = useState(true);
+  const [currentStripeMode, setCurrentStripeMode] = useState<boolean>(false);
+
+  // ✅ Reinicializa o Stripe quando o modo muda
+  useEffect(() => {
+    const reinitStripe = async () => {
+      setStripeInitialized(false);
+
+      const key = isTestCard ? (PUBLISH_KEY_TEST ?? "") : (PUBLISH_KEY ?? "");
+
+      try {
+        await initStripe({ publishableKey: key });
+        setCurrentStripeMode(isTestCard);
+        setStripeInitialized(true);
+      } catch (e) {
+        console.error("[Stripe] Falha ao reinicializar:", e);
+        setStripeInitialized(true); // evita tela travada
+      }
+    };
+
+    // Só reinicializa se o modo realmente mudou
+    if (isTestCard !== currentStripeMode) {
+      reinitStripe();
+    }
+  }, [isTestCard]);
 
   const currentPriceId = isTestCard ? PRICE_ID_TEST : PRICE_ID;
 
-  // ─────────────────────────────────────────────
-  // ÚNICO PASSO: setupIntent + subscription juntos
-  // ─────────────────────────────────────────────
   const handleSubscribe = () => {
     if (!user?.email || !billingDay) return;
 
@@ -69,13 +77,26 @@ export default function CheckoutScreen({
       try: async (toast) => {
         setLoading(true);
 
-        // 1. Criar setupIntent com a chave correta (já sabe se é teste)
+        // ✅ Agora isTestCard está correto E o Stripe foi reinicializado
         const setupResponse = await PaymentSubscriptionService.setupIntent({
           email: user.email,
-          isTest: isTestCard, // ✅ já sabe aqui
+          isTest: isTestCard,
         });
 
-        // 2. Confirmar cartão no Stripe
+        log("[Checkout] setupIntent criado:", {
+          isTest: isTestCard,
+          customerId: setupResponse.customerId,
+        });
+
+        log("[Checkout] Estado antes de confirmar:", {
+          isTestCard,
+          currentStripeMode,
+          stripeInitialized,
+          clientSecret: setupResponse.clientSecret.substring(0, 20) + "...",
+          // setupIntent de teste começa com seti_ e tem _test_ no clientSecret
+          clientSecretIsTest: setupResponse.clientSecret.includes("_test_"),
+        });
+
         const { setupIntent, error } = await confirmSetupIntent(
           setupResponse.clientSecret,
           { paymentMethodType: "Card" },
@@ -99,14 +120,13 @@ export default function CheckoutScreen({
           return;
         }
 
-        // 3. Criar assinatura com priceId correto
         const subscription =
           await PaymentSubscriptionService.createFromSetupIntent({
             customerId: setupResponse.customerId,
             paymentMethodId: setupIntent.paymentMethodId,
-            priceId: currentPriceId, // ✅ price correto
+            priceId: currentPriceId,
             billingDay,
-            isTest: isTestCard, // ✅ flag correta
+            isTest: isTestCard,
           });
 
         dispatch(setSubscriptionListState([subscription as any]));
@@ -122,6 +142,7 @@ export default function CheckoutScreen({
         }
       },
       catch: async (toast, error) => {
+        log("error subscription", error);
         toast.show({
           type: "error",
           text1: t(AppMessagesEnum.ERROR),
@@ -134,20 +155,18 @@ export default function CheckoutScreen({
 
   return (
     <ScrollView
-      style={[styles.container, customStyle.container]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
     >
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>
           {t(AppMessagesEnum.SUBSCRIPTION_PREMIUM_PLAIN)}
         </Text>
-        <Text style={[styles.subtitle, customStyle.subtitle]}>
+        <Text style={[styles.subtitle, { color: colors.gray600 }]}>
           R$ 1,00 / {t(AppMessagesEnum.MONTH)}
         </Text>
       </View>
 
-      {/* Passo 1: Dia de cobrança */}
       <BillingDayPicker
         email={user?.email || ""}
         priceId={currentPriceId}
@@ -155,42 +174,56 @@ export default function CheckoutScreen({
         onChange={(day) => setBillingDay(day)}
       />
 
-      {/* Passo 2: Cartão - sempre visível */}
       <View style={styles.cardContainer}>
         <Text style={styles.label}>
           {t(AppMessagesEnum.SUBSCRIPTION_CARD_DATA)}
         </Text>
         <CardField
           postalCodeEnabled={false}
-          cardStyle={customStyle.cardField}
+          cardStyle={{
+            backgroundColor: colors.background,
+            textColor: colors.text,
+            borderColor: colors.border,
+            placeholderColor: colors.gray300,
+            borderWidth: 1,
+            borderRadius: 8,
+            fontSize: 16,
+          }}
           style={styles.cardField}
           onCardChange={(cardDetails) => {
             setCardComplete(cardDetails.complete);
-            // ✅ Detecta cartão de teste pelo last4
             const testLast4 = ["4242", "4343", "0002", "1111"];
             setIsTestCard(testLast4.includes(cardDetails.last4 ?? ""));
           }}
         />
-        {isTestCard && (
-          <Text style={[styles.hint, customStyle.hint]}>
+
+        {!stripeInitialized && (
+          <View style={styles.reinitContainer}>
+            <ActivityIndicator size="small" />
+            <Text style={{ marginLeft: 8, color: colors.gray400 }}>
+              Configurando modo de pagamento...
+            </Text>
+          </View>
+        )}
+
+        {isTestCard && stripeInitialized && (
+          <Text style={[styles.hint, { color: colors.gray400 }]}>
             🧪 Modo teste detectado
           </Text>
         )}
       </View>
 
-      {/* Botão confirmar */}
       <Button
         title={`${t(AppMessagesEnum.SUBSCRIPTION_CONFIRM_SUBSCRIPTION)} - R$ 1,00/mês`}
         onPress={handleSubscribe}
         severity={SeverityEnum.PRIMARY}
-        disabled={loading || !cardComplete || !billingDay}
+        disabled={loading || !cardComplete || !billingDay || !stripeInitialized}
         style={{ marginBottom: 10 }}
       />
 
-      {/* Informações */}
-      <View style={[styles.infoContainer, customStyle.infoContainer]}>
+      <View style={[styles.infoContainer, { backgroundColor: colors.gray200 }]}>
         <Text style={styles.infoTitle}>ℹ️ {t(AppMessagesEnum.INFO)}</Text>
-        <Text style={[styles.infoText, customStyle.infoText]}>
+        <Text style={[styles.infoText, { color: colors.notification.info }]}>
           • {t(AppMessagesEnum.SUBSCRIPTION_AUTO_RENEW)}
           {"\n"}• {t(AppMessagesEnum.SUBSCRIPTION_CANCEL_ANYTIME)}
           {"\n"}• {t(AppMessagesEnum.SUBSCRIPTION_FIRST_MONTH)}
@@ -201,55 +234,22 @@ export default function CheckoutScreen({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  header: {
+  container: { flex: 1 },
+  content: { padding: 20, paddingBottom: 40 },
+  header: { alignItems: "center", marginBottom: 30 },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 8 },
+  subtitle: { fontSize: 18 },
+  cardContainer: { marginBottom: 20 },
+  label: { fontSize: 16, fontWeight: "600", marginBottom: 10 },
+  cardField: { height: 50, marginVertical: 10 },
+  hint: { textAlign: "center", fontSize: 14, marginTop: 10, marginBottom: 10 },
+  reinitContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 30,
+    justifyContent: "center",
+    marginTop: 8,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-  },
-  cardContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
-  },
-  cardField: {
-    height: 50,
-    marginVertical: 10,
-  },
-  hint: {
-    textAlign: "center",
-    fontSize: 14,
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  infoContainer: {
-    marginTop: 30,
-    padding: 15,
-    borderRadius: 8,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
-  },
-  infoText: {
-    fontSize: 14,
-    lineHeight: 22,
-  },
+  infoContainer: { marginTop: 30, padding: 15, borderRadius: 8 },
+  infoTitle: { fontSize: 16, fontWeight: "600", marginBottom: 10 },
+  infoText: { fontSize: 14, lineHeight: 22 },
 });

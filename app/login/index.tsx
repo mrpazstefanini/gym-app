@@ -1,14 +1,16 @@
 import { Button } from "@/components/custom/Button";
 import { ImageBackground, StyleSheet, View } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import useLogin from "./useLogin";
 import { useTranslation } from "@/hooks/useTranslation";
 import { AppMessagesEnum } from "@/shared/enum/AppMessagesEnum";
 import { StatusBar } from "expo-status-bar";
 import useCustomStyle from "@/hooks/useCustomStyle";
-import { IOS_ID, WEB_ID } from "@/shared/constants/envConstants";
-
-
+import { IOS_ID, NODE_ENV, WEB_ID } from "@/shared/constants/envConstants";
+import { toggleStripeTestMode } from "@/redux/slices/stripeSlice";
+import { RootReduxState } from "@reduxjs/toolkit";
+import { SeverityEnum } from "@/shared/enum/SeverityEnum";
 
 const backgroundImg = require("@assets/images/background.jpg");
 const logoImg = require("@assets/images/google-logo.png");
@@ -24,6 +26,8 @@ export default function Login() {
   const { theme } = useCustomStyle();
   const { handleGoogleSignIn } = useLogin();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const { isTestMode } = useSelector((state: RootReduxState) => state.stripe);
 
   return (
     <>
@@ -40,6 +44,15 @@ export default function Login() {
             imageSource={logoImg}
             onPress={handleGoogleSignIn}
           />
+
+          {NODE_ENV && (
+            <Button
+              style={{ marginTop: 20 }}
+              severity={SeverityEnum.SECONDARY}
+              title={`Toggle Stripe Test (${isTestMode})`}
+              onPress={() => dispatch(toggleStripeTestMode())}
+            />
+          )}
         </View>
       </ImageBackground>
     </>

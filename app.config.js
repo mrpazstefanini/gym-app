@@ -1,8 +1,22 @@
 // app.config.js
 module.exports = ({ config }) => {
-  // ✅ Debug: confirm env vars are loaded
-  console.log("[app.config] PUBLISH_KEY:", process.env.PUBLISH_KEY?.substring(0, 12));
-  console.log("[app.config] PRICE_ID:", process.env.PRICE_ID);
+  const isDev = process.env.NODE_ENV !== "production";
+
+  const stripeInitialKey = isDev
+    ? process.env.PUBLISH_KEY_TEST   // pk_test_...
+    : process.env.PUBLISH_KEY;       // pk_live_...
+
+  const stripePriceId = isDev
+    ? process.env.PRICE_ID_TEST
+    : process.env.PRICE_ID;
+
+
+  console.log(`\n[app.config] ──────────────────────────────────`);
+  console.log(`[app.config] Ambiente  : ${isDev ? "🧪 DESENVOLVIMENTO" : "🔴 PRODUÇÃO"}`);
+  console.log(`[app.config] Stripe Key: ${stripeInitialKey?.substring(0, 20)}...`);
+  console.log(`[app.config] Price ID  : ${stripePriceId}`);
+  console.log(`[app.config] ──────────────────────────────────\n`);
+
 
   return {
     ...config,
@@ -61,20 +75,25 @@ module.exports = ({ config }) => {
     },
 
     plugins: [
-      // ✅ Pass the REAL key to the native plugin
+      // ─── Stripe ────────────────────────────────────────────────────────────
       [
-        "./plugins/withStripeInit",
+        "./plugins/withStripeInit",       // ← injeta no MainApplication.kt
         {
-          publishableKey: process.env.PUBLISH_KEY, // ← use env var, not placeholder
+          publishableKey: stripeInitialKey,
         },
       ],
       [
         "@stripe/stripe-react-native",
         {
-          merchantIdentifier: "merchant.com.seuapp.academia",
+          merchantIdentifier: "merchant.com.gymapp",
           enableGooglePay: true,
         },
       ],
+
+      // ─── BuildConfig fields ────────────────────────────────────────────────
+      "./plugins/withBuildConfigFields",  // ← injeta no build.gradle
+
+      // ─── Outros plugins ───────────────────────────────────────────────────
       "expo-router",
       "expo-localization",
       [
@@ -117,31 +136,32 @@ module.exports = ({ config }) => {
     ],
 
     extra: {
-      router: {
-        origin: false,
-      },
-      eas: {
-        projectId: "8936a338-308b-4704-96ed-0fc65405e242",
-      },
+      router: { origin: false },
+      eas: { projectId: "8936a338-308b-4704-96ed-0fc65405e242" },
+
+      // ─── Ambiente ──────────────────────────────────────────────────────────
       NODE_ENV: process.env.NODE_ENV || "development",
 
+      // ─── Google ────────────────────────────────────────────────────────────
       EXPO_PUBLIC_IOS_ID: process.env.EXPO_PUBLIC_IOS_ID,
-      EXPO_PUBLIC_ANDROID_ID: process.env.EXPO_PUBLIC_ANDROID_ID_PROD,
+      EXPO_PUBLIC_ANDROID_ID: isDev
+        ? process.env.EXPO_PUBLIC_ANDROID_ID_DEV
+        : process.env.EXPO_PUBLIC_ANDROID_ID_PROD,
       EXPO_PUBLIC_WEB_ID: process.env.EXPO_PUBLIC_WEB_ID,
-      EXPO_PUBLIC_SECRET_KEY: process.env.EXPO_PUBLIC_SECRET_KEY,
-      EXPO_PUBLIC_LOG: process.env.EXPO_PUBLIC_LOG || "true",
       EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+      EXPO_PUBLIC_LOG: process.env.EXPO_PUBLIC_LOG || "true",
 
-      // ✅ Stripe keys
-      PRICE_ID: process.env.PRICE_ID,
-      PRICE_ID_TEST: process.env.PRICE_ID_TEST,
+      // ─── Stripe ────────────────────────────────────────────────────────────
+      PRICE_ID: stripePriceId,
       PUBLISH_KEY: process.env.PUBLISH_KEY,
       PUBLISH_KEY_TEST: process.env.PUBLISH_KEY_TEST,
-      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-      STRIPE_SECRET_KEY_TEST: process.env.STRIPE_SECRET_KEY_TEST,
+      // ⚠️ NUNCA exponha secret keys no frontend/extra
+      // STRIPE_SECRET_KEY deve ficar apenas no backend
 
-      EXPO_PUBLIC_BASE_URL_DEV: process.env.EXPO_PUBLIC_BASE_URL_DEV,
-      EXPO_PUBLIC_BASE_URL_PROD: process.env.EXPO_PUBLIC_BASE_URL_PROD,
+      // ─── URLs ──────────────────────────────────────────────────────────────
+      BASE_URL: isDev
+        ? process.env.EXPO_PUBLIC_BASE_URL_DEV
+        : process.env.EXPO_PUBLIC_BASE_URL_PROD,
     },
   };
 };

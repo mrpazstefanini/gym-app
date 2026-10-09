@@ -95,6 +95,13 @@ android {
         versionCode 1
         versionName "1.0.0"
 
+ // [withBuildConfigFields] AUTO-GENERATED - DO NOT EDIT
+ buildConfigField "String", "STRIPE_PUBLISHABLE_KEY", "\"pk_live_51TdG131mWsVRKY9DY4ZpBLR8CBIKLameUQ7b0XRNiaGBkD4Wz6YH3OarLkdUKqBVrbYEQnqpFvT0gz1MV8blWH2800hgYOBKlZ\""
+ buildConfigField "String", "STRIPE_PRICE_ID", "\"price_1U2xL71mWsVRKY9DFKIYafnM\""
+ buildConfigField "String", "GOOGLE_MAPS_API_KEY", "\"AIzaSyD1FZkm7p1MIb3EYxHqOz4nok1uM3PAiEY\""
+ buildConfigField "String", "BASE_URL", "\"https://gym-qlf24a3er-gym-7044c7bf.vercel.app/\""
+ // [withBuildConfigFields] END
+
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
     signingConfigs {
