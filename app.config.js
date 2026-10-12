@@ -2,19 +2,12 @@
 module.exports = ({ config }) => {
   const isDev = process.env.NODE_ENV !== "production";
 
-  const stripeInitialKey = isDev
-    ? process.env.PUBLISH_KEY_TEST   // pk_test_...
-    : process.env.PUBLISH_KEY;       // pk_live_...
-
-  const stripePriceId = isDev
-    ? process.env.PRICE_ID_TEST
-    : process.env.PRICE_ID;
-
+  const stripeInitialKey = process.env.PUBLISH_KEY;
 
   console.log(`\n[app.config] ──────────────────────────────────`);
   console.log(`[app.config] Ambiente  : ${isDev ? "🧪 DESENVOLVIMENTO" : "🔴 PRODUÇÃO"}`);
   console.log(`[app.config] Stripe Key: ${stripeInitialKey?.substring(0, 20)}...`);
-  console.log(`[app.config] Price ID  : ${stripePriceId}`);
+  console.log(`[app.config] Price ID  : ${process.env.PRICE_ID}`);
   console.log(`[app.config] ──────────────────────────────────\n`);
 
 
@@ -152,11 +145,8 @@ module.exports = ({ config }) => {
       EXPO_PUBLIC_LOG: process.env.EXPO_PUBLIC_LOG || "true",
 
       // ─── Stripe ────────────────────────────────────────────────────────────
-      PRICE_ID: stripePriceId,
+      PRICE_ID: process.env.PRICE_ID,
       PUBLISH_KEY: process.env.PUBLISH_KEY,
-      PUBLISH_KEY_TEST: process.env.PUBLISH_KEY_TEST,
-      // ⚠️ NUNCA exponha secret keys no frontend/extra
-      // STRIPE_SECRET_KEY deve ficar apenas no backend
 
       // ─── URLs ──────────────────────────────────────────────────────────────
       BASE_URL: isDev

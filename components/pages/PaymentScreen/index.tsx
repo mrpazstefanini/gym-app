@@ -1,8 +1,9 @@
 import { View, StyleSheet } from "react-native";
-import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
-import Text from "@/components/custom/Text";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import { PUBLISH_KEY } from "@/shared/constants/envConstants";
 import CheckoutScreen from "../CheckoutScreen";
+import { RootReduxState } from "@/redux";
+import { useSelector } from "react-redux";
 
 export default function App() {
   return (

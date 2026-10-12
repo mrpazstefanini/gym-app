@@ -1,5 +1,5 @@
 import Text from "@/components/custom/Text";
-import { PRICE_ID, PRICE_ID_TEST } from "@/shared/constants/envConstants";
+import { IS_TEST_CARD_MODE, PRICE_ID } from "@/shared/constants/envConstants";
 import { RootReduxState } from "@/redux";
 import { useDispatch, useSelector } from "react-redux";
 import { PaymentSubscriptionService } from "@/services/PaymentSubscriptionServices";
@@ -15,10 +15,10 @@ import BillingDayPicker from "@/components/custom/BillingDayPicker";
 import { log } from "@/shared/utils/log";
 
 // components/pages/CheckoutScreen/index.tsx
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { CardField, useStripe, initStripe } from "@stripe/stripe-react-native";
-import { PUBLISH_KEY, PUBLISH_KEY_TEST } from "@/shared/constants/envConstants";
+import { PUBLISH_KEY } from "@/shared/constants/envConstants";
 
 type CheckoutScreenProps = {
   reloadPageAfterPayment?: boolean;
@@ -44,12 +44,13 @@ export default function CheckoutScreen({
   const [stripeInitialized, setStripeInitialized] = useState(true);
   const [currentStripeMode, setCurrentStripeMode] = useState<boolean>(false);
 
+
   // ✅ Reinicializa o Stripe quando o modo muda
   useEffect(() => {
     const reinitStripe = async () => {
       setStripeInitialized(false);
 
-      const key = isTestCard ? (PUBLISH_KEY_TEST ?? "") : (PUBLISH_KEY ?? "");
+      const key = PUBLISH_KEY;
 
       try {
         await initStripe({ publishableKey: key });
@@ -65,9 +66,14 @@ export default function CheckoutScreen({
     if (isTestCard !== currentStripeMode) {
       reinitStripe();
     }
-  }, [isTestCard]);
+  }, [isTestCard, currentStripeMode]);
 
-  const currentPriceId = isTestCard ? PRICE_ID_TEST : PRICE_ID;
+  const currentPriceId = isTestCard
+    ? "price_1TdGJK1uqh8hd1HEgKI8NF7o"
+    : PRICE_ID;
+
+  log("[Checkout] Current price ID:", { currentPriceId });
+  log("[PRI");
 
   const handleSubscribe = () => {
     if (!user?.email || !billingDay) return;
@@ -89,7 +95,7 @@ export default function CheckoutScreen({
         });
 
         log("[Checkout] Estado antes de confirmar:", {
-          isTestCard,
+          isTestCard: isTestCard,
           currentStripeMode,
           stripeInitialized,
           clientSecret: setupResponse.clientSecret.substring(0, 20) + "...",
@@ -206,7 +212,7 @@ export default function CheckoutScreen({
           </View>
         )}
 
-        {isTestCard && stripeInitialized && (
+        {IS_TEST_CARD_MODE && stripeInitialized && (
           <Text style={[styles.hint, { color: colors.gray400 }]}>
             🧪 Modo teste detectado
           </Text>

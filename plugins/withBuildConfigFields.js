@@ -10,12 +10,12 @@ module.exports = function withBuildConfigFields(config) {
       {
         type: "String",
         name: "STRIPE_PUBLISHABLE_KEY",
-        value: process.env.PUBLISH_KEY || process.env.PUBLISH_KEY_TEST || "",
+        value: process.env.PUBLISH_KEY || "",
       },
       {
         type: "String",
         name: "STRIPE_PRICE_ID",
-        value: process.env.PRICE_ID || process.env.PRICE_ID_TEST || "",
+        value: process.env.PRICE_ID || "",
       },
       {
         type: "String",

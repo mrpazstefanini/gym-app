@@ -1,116 +1,197 @@
-import { i18n } from "@/i18n";
-import { getDatabaseService, store } from "@/redux";
-import { AppMessagesEnum } from "@/shared/enum/AppMessagesEnum";
-import { StatusCodeEnum } from "@/shared/enum/StatusCodeEnum";
-import axios from "axios";
-import { AuthServices } from "./AuthServices";
-import { log } from "@/shared/utils/log";
-import { logoutUser } from "@/redux/slices/authSlice";
-import { API_TIMEOUT } from "@/shared/constants/general";
-import { BASE_URL } from "@/shared/constants/envConstants";
+// api.ts
+import { i18n } from '@/i18n';
+import { getDatabaseService, store } from '@/redux';
+import { AppMessagesEnum } from '@/shared/enum/AppMessagesEnum';
+import { StatusCodeEnum } from '@/shared/enum/StatusCodeEnum';
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import { AuthServices } from './AuthServices';
+import { log } from '@/shared/utils/log';
+import { logoutUser } from '@/redux/slices/authSlice';
+import { API_TIMEOUT } from '@/shared/constants/general';
+import { BASE_URL, NODE_ENV } from '@/shared/constants/envConstants';
 
-const api = axios.create({
+// ─── Validate on startup ──────────────────────────────────────────────────────
+if (!BASE_URL) {
+  console.error('❌ [api] BASE_URL is undefined!', {
+    NODE_ENV,
+    hint: 'Check .env and app.config.js extra.BASE_URL',
+  });
+} else {
+  console.log(`🌐 [api] Base URL: ${BASE_URL} (${NODE_ENV})`);
+}
+
+// ─── Axios Instance ───────────────────────────────────────────────────────────
+const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: API_TIMEOUT,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
+// ─── Request Interceptor ──────────────────────────────────────────────────────
+api.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+    try {
+      const localDataBase = getDatabaseService();
+      if (localDataBase) {
+        const user = await localDataBase.userLocalService.getUser();
+        const token = user?.token;
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      }
+    } catch (e) {
+      log('⚠️ [api] Could not attach auth token:', e);
+    }
+
+    log(`➡️ [${config.method?.toUpperCase()}] ${config.baseURL}${config.url}`);
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+// ─── Refresh Token Queue ──────────────────────────────────────────────────────
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    error ? prom.reject(error) : prom.resolve(token!);
+  });
+  failedQueue = [];
+};
+
+// ─── Response Interceptor ─────────────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => {
+    log(`✅ [${response.status}] ${response.config.url}`);
     return response;
   },
   async (error) => {
-    try {
-      if (
-        error.response &&
-        error.response.status === StatusCodeEnum.UNAUTHORIZED &&
-        error.response.data &&
-        error.response.data.message === StatusCodeEnum.JWT_EXPIRED
-      ) {
-        // Token expirado, tenta renovar
+    const originalRequest = error.config;
 
-        // Implementação do refresh token
+    // ── 401 + JWT expired → try refresh ──────────────────────────────────────
+    if (
+      error.response?.status === StatusCodeEnum.UNAUTHORIZED &&
+      error.response?.data?.message === StatusCodeEnum.JWT_EXPIRED &&
+      !originalRequest._retry
+    ) {
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
         const newToken = await refreshToken();
-
-        // Recupera a requisição original que falhou
-        const originalRequest = error.config;
-
-        // Atualiza o token na requisição original
+        processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-
-        // Refaz a requisição original com o novo token
-        return axios(originalRequest);
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
-
-      if (
-        error?.code === StatusCodeEnum.GATEWAY_TIMEOUT ||
-        (error?.response && error?.response.status === 504)
-      ) {
-        throw new Error(i18n.translate(AppMessagesEnum.GATEWAY_TIMEOUT));
-      }
-
-      if (error?.code === StatusCodeEnum.ERR_NETWORK) {
-        throw new Error(i18n.translate(AppMessagesEnum.UNKNOWN));
-      }
-
-      return Promise.reject(error);
-    } catch (e) {
-      return Promise.reject(e);
     }
+
+    // ── 504 Gateway Timeout ───────────────────────────────────────────────────
+    if (
+      error?.code === StatusCodeEnum.GATEWAY_TIMEOUT ||
+      error?.response?.status === 504
+    ) {
+      return Promise.reject(
+        new Error(i18n.translate(AppMessagesEnum.GATEWAY_TIMEOUT)),
+      );
+    }
+
+    // ── Network Error ─────────────────────────────────────────────────────────
+    if (error?.code === StatusCodeEnum.ERR_NETWORK) {
+      return Promise.reject(
+        new Error(i18n.translate(AppMessagesEnum.UNKNOWN)),
+      );
+    }
+
+    log(`❌ [api] Error [${error?.response?.status}]:`, error?.response?.data);
+    return Promise.reject(error);
   },
 );
 
+// ─── Refresh Token ────────────────────────────────────────────────────────────
 const refreshToken = async (): Promise<string> => {
   const localDataBase = getDatabaseService();
-  log("Iniciando processo de refresh token...");
+  log('🔄 [api] Starting refresh token...');
+
+  if (!localDataBase) {
+    throw new Error(i18n.translate(AppMessagesEnum.LOCAL_DATA_BASE_UNAVAILABLE));
+  }
 
   try {
-    if (!localDataBase)
-      throw new Error(
-        i18n.translate(AppMessagesEnum.LOCAL_DATA_BASE_UNAVAILABLE),
-      );
+    const response = await AuthServices.refreshToken('');
+    const { token: newToken, googleTokens: newGoogleTokens } = response;
 
-    log("Tentando renovar token com refresh token...");
-    const response = await AuthServices.refreshToken("");
-    log("Resposta do refresh token:", response);
-    const newToken = response.token;
-    const newGoogleTokens = response.googleTokens;
-
-    localDataBase.userLocalService.updateUserTokens({
+    await localDataBase.userLocalService.updateUserTokens({
       token: newToken,
       googleTokens: newGoogleTokens,
     });
 
-    log("Refresh token bem-sucedido.");
-
+    log('✅ [api] Refresh token successful');
     return newToken;
   } catch (e) {
+    log('❌ [api] Refresh token failed:', e);
     await store.dispatch(logoutUser(AppMessagesEnum.SESSION_EXPIRED));
-
     throw new Error(i18n.translate(AppMessagesEnum.SESSION_EXPIRED));
   }
 };
 
-const get = async <Response>(url: string) => {
+// ─── HTTP Methods ─────────────────────────────────────────────────────────────
+const get = async <Response>(url: string): Promise<Response> => {
   const { data } = await api.get<Response>(url);
   return data;
 };
 
-const post = async <Request, Response>(url: string, data: Request) => {
-  const response = await api.post<Response>(url, data);
-  return response.data;
-};
-const put = async <Request, Response>(url: string, data: Request) => {
-  const response = await api.put<Response>(url, data);
-  return response.data;
+const post = async <Request, Response>(
+  url: string,
+  body: Request,
+): Promise<Response> => {
+  const { data } = await api.post<Response>(url, body);
+  return data;
 };
 
-const remove = async <Response, Request = any>(url: string, data?: Request) => {
-  const response = await api.delete<Response>(url, { data });
-  return response.data;
+const put = async <Request, Response>(
+  url: string,
+  body: Request,
+): Promise<Response> => {
+  const { data } = await api.put<Response>(url, body);
+  return data;
 };
-const patch = async <Request, Response>(url: string, data: Request) => {
-  const response = await api.patch<Response>(url, data);
-  return response.data;
+
+const remove = async <Response, Request = unknown>(
+  url: string,
+  body?: Request,
+): Promise<Response> => {
+  const { data } = await api.delete<Response>(url, { data: body });
+  return data;
+};
+
+const patch = async <Request, Response>(
+  url: string,
+  body: Request,
+): Promise<Response> => {
+  const { data } = await api.patch<Response>(url, body);
+  return data;
 };
 
 export { api, get, post, put, remove, patch };

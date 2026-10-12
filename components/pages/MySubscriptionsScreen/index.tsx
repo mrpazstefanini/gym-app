@@ -14,7 +14,7 @@ import Text from "@/components/custom/Text";
 import { useDispatch, useSelector } from "react-redux";
 import { RootReduxState } from "@/redux";
 import { PaymentSubscriptionService } from "@/services/PaymentSubscriptionServices";
-import { PRICE_ID, PRICE_ID_TEST } from "@/shared/constants/envConstants";
+import { PRICE_ID, IS_TEST_CARD_MODE } from "@/shared/constants/envConstants";
 import UpdateCardModal from "@/components/UpdateCardModal";
 import {
   getStatusText,
@@ -635,10 +635,7 @@ export default function MySubscriptionsScreen({
   };
 
   const handleReactivate = (item: ISubscriptionByUserData) => {
-
-    const itemPriceId = item.items?.data?.[0]?.price?.id ?? "";
-    const isTest = itemPriceId === PRICE_ID_TEST;
-    const priceId = isTest ? PRICE_ID_TEST : PRICE_ID;
+    const priceId = PRICE_ID;
 
     Alert.alert(
       t(AppMessagesEnum.SUBSCRIPTION_REACTIVATE_TITLE),
@@ -657,7 +654,7 @@ export default function MySubscriptionsScreen({
                   customerId: item.customer,
                   priceId,
                   paymentMethodId: item.default_payment_method?.id,
-                  isTest
+                  isTest: IS_TEST_CARD_MODE,
                 });
 
                 toast.show({
@@ -1029,7 +1026,7 @@ export default function MySubscriptionsScreen({
         subscriptionId={billingDayModal.subscriptionId}
         currentDay={billingDayModal.currentDay}
         email={user?.email || ""}
-        priceId={isTestCard ? PRICE_ID_TEST : PRICE_ID}
+        priceId={PRICE_ID}
         onSuccess={handleBillingDaySuccess}
         onCancel={handleCancelBillingDay}
       />

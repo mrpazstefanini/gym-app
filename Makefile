@@ -51,7 +51,6 @@ dev:
 	@npx expo run:android --localhost
 
 start:
-	@make tunnel
 	@echo " Configurando ADB tunnel..."
 	@adb reverse tcp:8081 tcp:8081
 	@adb reverse tcp:8082 tcp:8082
@@ -161,3 +160,9 @@ clean-all:
 	@powershell -Command "if (Test-Path node_modules) { Remove-Item node_modules -Recurse -Force }"
 	@$(MAKE) removeAndroid
 	@npm install
+
+build-dev: 
+	@Remove-Item -Recurse -Force android\app\build;
+	@Remove-Item -Recurse -Force android\build;
+	@reset;
+	@./build-apk.bat

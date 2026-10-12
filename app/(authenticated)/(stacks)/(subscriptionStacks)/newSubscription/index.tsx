@@ -5,7 +5,9 @@ import CheckoutScreen from "@/components/pages/CheckoutScreen";
 
 export default function NewSubscription() {
   return (
-    <StripeProvider publishableKey={PUBLISH_KEY}>
+    <StripeProvider
+      publishableKey={PUBLISH_KEY}
+    >
       <View style={[styles.container]}>
         <CheckoutScreen />
       </View>
