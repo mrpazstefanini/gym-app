@@ -314,6 +314,7 @@ export class UserLocal extends Realm.Object<UserWithTokens> {
   cpf?: string;
   token?: string;
   googleTokens?: IGoogleTokens;
+  isFree!: boolean;
   academyId!: string;
   createdAt!: Date;
   updatedAt!: Date;
@@ -332,8 +333,9 @@ export class UserLocal extends Realm.Object<UserWithTokens> {
       groupIds: "string[]",
       cpf: "string?",
       token: "string",
-      googleTokens: "mixed", // Para objetos aninhados complexos
+      googleTokens: "mixed",
       academyId: "string",
+      isFree: "bool",
       createdAt: "date",
       updatedAt: "date",
       isDeleted: "bool",

@@ -10,6 +10,7 @@ export interface IUser extends IDefaultEntityProperties {
   groupIds?: IdType[];
   academyId?: IdType;
   refreshToken?: string;
+  isFree: boolean;
 }
 
 

@@ -163,6 +163,23 @@ const migrateToVersion7 = (oldRealm: Realm, newRealm: Realm) => {
   log("Migração para versão 7 concluída");
 };
 
+const migrateToVersion8 = (oldRealm: Realm, newRealm: Realm) => {
+  // Migração para adicionar o campo isFree no UserLocal
+  const oldUsers = oldRealm.objects("User");
+  const newUsers = newRealm.objects("User");
+
+  for (let i = 0; i < oldUsers.length; i++) {
+    const oldUser = oldUsers[i];
+    const newUser = newUsers[i];
+
+    if (newUser.isFree === undefined) {
+      newUser.isFree = oldUser.isFree ?? false; 
+    }
+  }
+
+  log("Migração para versão 8 concluída");
+};
+
 /**
  * Função principal de migração que executa as migrações necessárias
  * com base na versão do schema
@@ -200,6 +217,10 @@ export const migrationFunction = (oldRealm: Realm, newRealm: Realm) => {
 
   if (oldVersion < 7) {
     migrateToVersion7(oldRealm, newRealm);
+  }
+
+  if (oldVersion < 8) {
+    migrateToVersion8(oldRealm, newRealm);
   }
 };
 
