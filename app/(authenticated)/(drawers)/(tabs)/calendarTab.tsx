@@ -2,14 +2,12 @@ import { FlatList, StyleSheet, View } from "react-native";
 import Calendar from "@/components/custom/Calendar";
 import Container from "@/components/custom/Container";
 import { useTranslation } from "@/hooks/useTranslation";
-import { use, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootReduxState } from "@/redux";
 import { useFocusEffect, useRouter } from "expo-router";
 import Card from "@/components/custom/Card";
-import { useApi } from "@/hooks/useApi";
 import { WeekDayDescription } from "@/shared/utils/weedaysUtils";
-import { IExercise } from "@/shared/models/IExercise";
 import { ITraining } from "@/shared/models/ITraining";
 import { ITrainingByUser } from "@/shared/models/ITrainingByUser";
 import useAddSkeletonListHOC from "@/hooks/useAddSkeletonListHOC";
@@ -18,7 +16,6 @@ import { IconType } from "@/shared/types/IconType";
 
 export default function SchedulesTab() {
   const { t } = useTranslation();
-  const { call } = useApi();
   const router = useRouter();
   const { list: exerciseList, loading: loadingExercise } = useSelector(
     (state: RootReduxState) => state.exercise

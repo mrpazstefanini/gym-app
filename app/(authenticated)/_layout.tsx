@@ -17,6 +17,7 @@ export default function StacksLayout() {
   const { colors } = useCustomStyle();
   const authState = useContext(AuthContext);
   const dispatch = useDispatch();
+  const { user } = useSelector((state: RootReduxState) => state.user);
   const { subscriptionList, loading: isSubscriptionLoading } = useSelector(
     (state: RootReduxState) => state.subscription,
   );
@@ -103,7 +104,7 @@ export default function StacksLayout() {
   }
 
   // 4. Sem subscription → nova subscription
-  if (!subscriptionList || subscriptionList.length === 0) {
+  if (!user?.isFree && (!subscriptionList || subscriptionList.length === 0)) {
     return <Redirect href="/(subscription)/newSubscription" />;
   }
 
@@ -111,12 +112,14 @@ export default function StacksLayout() {
 
   // 5. Sem subscription ativa → gerenciar subscription
   if (
-    !subscriptionList ||
-    !subscriptionList.some((subscription) =>
-      [
-        SubscriptionsStatusEnum.ACTIVE,
-        SubscriptionsStatusEnum.TRIALING,
-      ].includes(subscription.status as SubscriptionsStatusEnum),
+    !user?.isFree &&
+    (!subscriptionList ||
+      !subscriptionList.some((subscription) =>
+        [
+          SubscriptionsStatusEnum.ACTIVE,
+          SubscriptionsStatusEnum.TRIALING,
+        ].includes(subscription.status as SubscriptionsStatusEnum),
+      )
     )
   ) {
     return <Redirect href="/(subscription)/subscriptionByUserDrawer" />;

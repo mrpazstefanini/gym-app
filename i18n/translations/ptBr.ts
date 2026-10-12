@@ -41,6 +41,7 @@ export const ptBrAppMessages: Record<AppMessagesEnum, string> = {
     "Sessão expirada. Por favor, faça login novamente.",
   [AppMessagesEnum.GATEWAY_TIMEOUT]: "Erro de conexão. Tente novamente.",
   [AppMessagesEnum.USER_ADMINISTRATOR]: "Usuário Administrador",
+  [AppMessagesEnum.FREE_ACCOUNT]: "Conta gratuíta",
   [AppMessagesEnum.FINALIZE]: "Finalizar",
   [AppMessagesEnum.FINISHED]: "Finalizada",
   [AppMessagesEnum.SEARCH]: "Pesquisar",

@@ -1,61 +1,8 @@
-import { RootReduxState } from "@/redux";
-import { ISubscriptionByUserData } from "@/services/PaymentSubscriptionServices/interfaces";
-import { SubscriptionsStatusEnum } from "@/shared/enum/SubscriptionsStatusEnum";
-import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect } from "react";
 import { StyleSheet, ImageBackground, View } from "react-native";
-import { useSelector } from "react-redux";
 
 const backgroundImg = require("@/assets/images/home-background.png");
 
 export default function HomeScreen() {
-  const { user } = useSelector((state: RootReduxState) => state.user);
-  const { subscriptionList, loading: isSubscriptionLoading } = useSelector(
-    (state: RootReduxState) => state.subscription,
-  );
-  const { isInitialLoadingFinished } = useSelector(
-    (state: RootReduxState) => state.auth,
-  );
-
-  const router = useRouter();
-
-  // const getSubscriptionStatus = useCallback(
-  //   (subscriptionList: ISubscriptionByUserData[] | null) => {
-  //     if (user && user.isAdmin) {
-  //       return;
-  //     }
-
-  //     if (isSubscriptionLoading || (!isInitialLoadingFinished && !subscriptionList)) {
-  //       return;
-  //     }
-
-  //     if (!subscriptionList || subscriptionList.length === 0) {
-  //       return router.push(
-  //         "/(authenticated)/(stacks)/(subscriptionStacks)/newSubscription/",
-  //       );
-  //     }
-
-  //     const hasActiveSubscription = subscriptionList.some((subscription) =>
-  //       [
-  //         SubscriptionsStatusEnum.ACTIVE,
-  //         SubscriptionsStatusEnum.TRIALING,
-  //       ].includes(subscription.status as SubscriptionsStatusEnum),
-  //     );
-
-  //     if (!hasActiveSubscription) {
-  //       router.push("(drawers)/subscriptionByUserDrawer");
-  //       return;
-  //     }
-  //   },
-  //   [router, user, isSubscriptionLoading, isInitialLoadingFinished],
-  // );
-
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     getSubscriptionStatus(subscriptionList);
-  //   }, [getSubscriptionStatus, subscriptionList]),
-  // );
-
   return (
     <View style={styles.container}>
       <ImageBackground

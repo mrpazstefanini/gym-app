@@ -63,16 +63,12 @@ function StripeWrapper() {
 
   const [stripeReady, setStripeReady] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
-
-  // ✅ Sempre começa com a chave de teste no layout raiz
-  // A troca dinâmica acontece no CheckoutScreen via initStripe()
   const publishableKey = PUBLISH_KEY;
 
   useEffect(() => {
     if (fontError) throw fontError;
   }, [fontError]);
 
-  // ✅ Reinicializa quando isTestMode muda
   useEffect(() => {
     const init = async () => {
       if (!publishableKey) {
@@ -98,7 +94,7 @@ function StripeWrapper() {
     };
 
     init();
-  }, [publishableKey]); // ← depende de publishableKey, não []
+  }, [publishableKey]); 
 
   if (!loaded || (!stripeReady && !stripeError)) {
     return (

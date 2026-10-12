@@ -20,6 +20,7 @@ export const initialUser: ExtendedUserState = {
   academyId: undefined,
   addGroupId: "",
   removeGroupId: "",
+  isFree: false,
 };
 
 export default function userReducer(
@@ -39,6 +40,8 @@ export default function userReducer(
     case "groupIds":
     case "academyId":
       return { ...state, [action.type]: action.payload };
+    case "isFree":
+      return { ...state, isFree: action.payload };
 
     case "addGroupId":
       if (state.groupIds?.includes(action.payload as string)) {

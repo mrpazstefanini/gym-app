@@ -108,6 +108,22 @@ export default function UserScreen({
             </View>
           )}
 
+          {currentUser?.isAdmin && (
+            <View style={styles.inputWrapper}>
+              {isLoading ? (
+                <Skeleton style={styles.inputWrapper} />
+              ) : (
+                <Checkbox
+                  label={t(AppMessagesEnum.FREE_ACCOUNT)}
+                  checked={user.isFree}
+                  onChange={(checked) => {
+                    dispatch({ type: "isFree", payload: checked });
+                  }}
+                />
+              )}
+            </View>
+          )}
+
           {isLoading ? (
             <Skeleton style={styles.inputWrapper} />
           ) : (

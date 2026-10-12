@@ -38,6 +38,7 @@ export const enAppMessages: Record<AppMessagesEnum, string> = {
   [AppMessagesEnum.SESSION_EXPIRED]: "Session expired. Please log in again.",
   [AppMessagesEnum.GATEWAY_TIMEOUT]: "Connection error. Please try again.",
   [AppMessagesEnum.USER_ADMINISTRATOR]: "User Administrator",
+  [AppMessagesEnum.FREE_ACCOUNT]: "Free Account",
   [AppMessagesEnum.FINALIZE]: "Finalize",
   [AppMessagesEnum.FINISHED]: "Finished",
   [AppMessagesEnum.SEARCH]: "Search",
