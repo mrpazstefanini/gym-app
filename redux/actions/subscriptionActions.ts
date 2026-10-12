@@ -4,6 +4,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { RootReduxState } from "../index";
 import { PaymentSubscriptionService } from "@/services/PaymentSubscriptionServices";
 import { ISubscriptionByUserData } from "@/services/PaymentSubscriptionServices/interfaces";
+import { UserServices } from "@/services/UserServices";
 
 /**
  * @description the first parameter from  async (input: Input, { getState, rejectWithValue })
@@ -13,7 +14,7 @@ type Input = {
   email?: string; // ✅ novo parâmetro
 } | void;
 
-type Output = ISubscriptionByUserData[] | null;
+type Output = {subscriptions: ISubscriptionByUserData[] | null; isFree: boolean};
 
 type State = {
   state: RootReduxState;
@@ -32,7 +33,10 @@ export const fetchSubscription = createAsyncThunk<Output, Input, State>(
 
       if (!inputData?.ignoreCheckState) {
         if ((state.subscription?.subscriptionList ?? []).length > 0) {
-          return state.subscription?.subscriptionList ?? [];
+          return {
+            subscriptions: state.subscription?.subscriptionList ?? [],
+            isFree: state.user?.user?.isFree ?? false,
+          };
         }
       }
 
@@ -46,11 +50,16 @@ export const fetchSubscription = createAsyncThunk<Output, Input, State>(
       const res =
         await PaymentSubscriptionService.listSubscriptionsByUser(email);
 
+      const user = await UserServices.getByEmail(email);
+
+      log("Fetched user by email:", user);
+
+
       if (res && res.subscriptions && res.subscriptions.length > 0) {
-        return res.subscriptions;
+        return {subscriptions: res.subscriptions, isFree: user?.isFree ?? false};
       }
 
-      return [];
+      return {subscriptions: null, isFree: false};
     } catch (error) {
       return rejectWithValue("Failed to fetch subscriptions");
     }

@@ -29,4 +29,9 @@ export class UserServices {
         return get<IUser>('/user/logged-user');
     }
 
+
+    static async getByEmail(email: string) {
+        return get<IUser>(`/user/email/${email}`);
+    }
+
 }   

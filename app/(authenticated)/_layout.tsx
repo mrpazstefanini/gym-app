@@ -18,7 +18,7 @@ export default function StacksLayout() {
   const authState = useContext(AuthContext);
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootReduxState) => state.user);
-  const { subscriptionList, loading: isSubscriptionLoading } = useSelector(
+  const {  subscriptionList, isFree: isSubscriptionFree, loading: isSubscriptionLoading } = useSelector(
     (state: RootReduxState) => state.subscription,
   );
 
@@ -46,6 +46,11 @@ export default function StacksLayout() {
       });
     }
   }, []);
+
+
+    const checkIfSubscriptionIsFree = ()=>{
+    return user?.isFree !== undefined ? user?.isFree : isSubscriptionFree;
+  }
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -104,15 +109,18 @@ export default function StacksLayout() {
   }
 
   // 4. Sem subscription → nova subscription
-  if (!user?.isFree && (!subscriptionList || subscriptionList.length === 0)) {
+  if ((!checkIfSubscriptionIsFree()) && (!subscriptionList || subscriptionList.length === 0)) {
+    log("1. redirection to newSubscription, isSubscriptionFree", isSubscriptionFree);
     return <Redirect href="/(subscription)/newSubscription" />;
   }
 
   log("2 subscriptionList", subscriptionList);
 
+
+
   // 5. Sem subscription ativa → gerenciar subscription
   if (
-    !user?.isFree &&
+    (!checkIfSubscriptionIsFree()) &&
     (!subscriptionList ||
       !subscriptionList.some((subscription) =>
         [
@@ -122,6 +130,7 @@ export default function StacksLayout() {
       )
     )
   ) {
+    log("2. redirection to subscriptionByUserDrawer, checkIfSubscriptionIsFree", checkIfSubscriptionIsFree());
     return <Redirect href="/(subscription)/subscriptionByUserDrawer" />;
   }
 

@@ -22,6 +22,7 @@ export default function useFetchUser() {
             groupIds: data.payload.groupIds,
             academyId: data.payload.academyId,
             id: data.payload.id,
+            isFree: data.payload.isFree,
             createdAt: data.payload.createdAt,
             updatedAt: data.payload.updatedAt,
         }

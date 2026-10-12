@@ -224,7 +224,7 @@ export const migrationFunction = (oldRealm: Realm, newRealm: Realm) => {
   }
 };
 
-export const latestVersion = 6;
+export const latestVersion = 8;
 
 // Configuração do Realm com a versão atualizada
 export const realmConfig = {

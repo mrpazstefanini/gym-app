@@ -39,6 +39,7 @@ export default function userReducer(
     case "phoneNumber":
     case "groupIds":
     case "academyId":
+    case "isFree":
       return { ...state, [action.type]: action.payload };
     case "isFree":
       return { ...state, isFree: action.payload };

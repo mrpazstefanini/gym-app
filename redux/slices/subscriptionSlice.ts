@@ -6,12 +6,14 @@ import { ISubscriptionByUserData } from "@/services/PaymentSubscriptionServices/
 
 export interface SubscriptionState {
   subscriptionList: ISubscriptionByUserData[] | null;
+  isFree: boolean;
   loading: boolean;
   error?: string;
 }
 
 const initialState: SubscriptionState = {
   subscriptionList: null,
+  isFree: false,
   loading: false,
   error: undefined,
 };
@@ -37,7 +39,8 @@ const subscriptionSlice = createSlice({
       state.error = undefined;
     });
     builder.addCase(fetchSubscription.fulfilled, (state, action) => {
-      state.subscriptionList = action.payload;
+      state.subscriptionList = action.payload.subscriptions;
+      state.isFree = action.payload.isFree;
       state.loading = false;
     });
     builder.addCase(fetchSubscription.rejected, (state, action) => {
