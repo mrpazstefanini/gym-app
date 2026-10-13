@@ -15,19 +15,17 @@ help:
 	@type $(MAKEFILE_LIST) | findstr /R "^[a-zA-Z_-]*:.*"
 
 ############################################################################### Project support
-remoteAndroidBuildPreview: # to generate android apk
-	$$message = Read-Host "Enter expo message"; `
-	Write-Host "Building the project remotely..."; `
-	eas build --platform android --profile preview --message "$$message"
+remoteAndroidBuildAPK: # make remoteAndroidBuildAPK message="something"
+	@echo "Building the project remotely..."
+	@eas build -p android --profile preview --message "$(message)"
 
 setNote20:
 	@echo "Setting Node.js version to 20..."
 	@setNode20
 
-remoteBuildProduction:
-	@$$message = Read-Host "Enter expo message"; \
-	echo "Building the project remotely..."; \
-	eas build -p android --profile production --message "$$message"
+remoteBuildAAB: # make remoteBuildAAB message="something"
+	@echo "Building the project remotely..."
+	@eas build -p android --profile production --message "$(message)"
 
 buildProduction:
 	@echo "Building the project locally..."

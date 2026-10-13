@@ -25,7 +25,6 @@ import { GOOGLE_MAPS_API_KEY } from "@/shared/constants/envConstants";
 
 export const { width, height } = Dimensions.get("window");
 
-
 export const WAZE_MAP_STYLE = [
   {
     featureType: "building",
@@ -228,13 +227,12 @@ export default function useRunning(exercise?: IExercise) {
     distanceKm: number,
     timeSeconds: number,
   ): string => {
-    if (distanceKm <= 0.01 || timeSeconds <= 0) return DEFAULT_TIME;
+    if (distanceKm <= 0.001 || timeSeconds <= 0) return DEFAULT_TIME;
 
-    // ✅ Pace = tempo / distância (min/km)
-    const paceSeconds = timeSeconds / distanceKm;
+    const paceSeconds = timeSeconds / distanceKm; // s/km
 
-    // Filtrar paces irreais (muito lento = parado)
-    if (paceSeconds > 1800) return DEFAULT_TIME; // > 30 min/km = parado
+    // > 30 min/km = parado, retorna default
+    if (paceSeconds > 1800) return DEFAULT_TIME;
 
     const mins = Math.floor(paceSeconds / 60);
     const secs = Math.floor(paceSeconds % 60);
@@ -647,19 +645,19 @@ export default function useRunning(exercise?: IExercise) {
       console.error("[startLocationTracking] Bg task error:", e);
     }
 
-    // Timer
     timerRef.current = setInterval(() => {
       if (startTimeRef.current > 0 && isRunningRef.current) {
         const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
         setElapsedTime(elapsed);
         elapsedTimeRef.current = elapsed;
 
-        // if (distanceRef.current > 0) {
-        //   const p = calculateCurrentPace(distanceRef.current, elapsed);
-        //   if (p !== DEFAULT_TIME) {
-        //     setPace(p);
-        //   }
-        // }
+        // ✅ Recalcula pace a cada segundo com tempo e distância reais
+        if (distanceRef.current > 0 && elapsed > 0) {
+          const p = calculateCurrentPace(distanceRef.current, elapsed);
+          if (p !== DEFAULT_TIME) {
+            setPace(p);
+          }
+        }
       }
     }, 1000);
 
@@ -768,23 +766,37 @@ export default function useRunning(exercise?: IExercise) {
     isRunningRef.current = next;
   };
 
+  const getFinalPaceAverage = (paceAverageRef: string[]): string => {
+    if (paceAverageRef.length === 0) return DEFAULT_TIME;
+    const totalSeconds = paceAverageRef.reduce((acc, pace) => {
+      const [mins, secs] = pace.split(":").map(Number);
+      return acc + mins * 60 + secs;
+    }, 0);
+    const avgSeconds = totalSeconds / paceAverageRef.length;
+    const mins = Math.floor(avgSeconds / 60);
+    const secs = Math.floor(avgSeconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
   // ── Finalizar exercício ─────────────────────────────────────────────────────
   const onFinalizeExercise = async () => {
-    // Calcular distância total dos pontos
     const calculatedDistance = calculateTotalDistance(
       routeCoordinatesRef.current,
     );
 
-    console.log("=== COMPARAÇÃO DE DISTÂNCIAS ===");
-    console.log(`Distância acumulada: ${distanceRef.current.toFixed(3)} km`);
-    console.log(`Distância calculada: ${calculatedDistance.toFixed(3)} km`);
-    console.log(`Total de pontos: ${routeCoordinatesRef.current.length}`);
-    console.log(
-      `Diferença: ${Math.abs(distanceRef.current - calculatedDistance).toFixed(3)} km`,
-    );
-
-    // ✅ Usar a distância calculada se for maior (mais precisa)
     const finalDistance = Math.max(distanceRef.current, calculatedDistance);
+    const finalElapsed = elapsedTimeRef.current;
+
+    // ✅ Pace final correto: tempo total / distância total
+    const finalPace = calculateCurrentPace(finalDistance, finalElapsed);
+
+    console.log("=== MÉTRICAS FINAIS ===");
+    console.log(`Distância: ${finalDistance.toFixed(4)} km`);
+    console.log(`Tempo: ${finalElapsed}s`);
+    console.log(`Pace calculado: ${finalPace} min/km`);
+    console.log(
+      `Verificação: ${finalElapsed}s / ${finalDistance.toFixed(4)}km = ${(finalElapsed / finalDistance).toFixed(1)}s/km`,
+    );
 
     const speedAverage = getSpeedAverage();
 
@@ -794,8 +806,8 @@ export default function useRunning(exercise?: IExercise) {
         exercise && exercise.academyId ? exercise.academyId.toString() : "0",
       speedAverage,
       distance: finalDistance,
-      pace: getPaceAverage(speedAverage),
-      elapsedTime: elapsedTimeRef.current,
+      pace: finalPace, // ✅ Pace correto
+      elapsedTime: finalElapsed,
       startLocation: initialLocation,
       endLocation: finalLocation,
       routePoints: routeCoordinatesRef.current.map((coord) => ({
@@ -806,7 +818,6 @@ export default function useRunning(exercise?: IExercise) {
         heading: coord.heading,
         speed: coord.speed,
         altitudeAccuracy: coord.altitudeAccuracy,
-        // Não incluir timestamp no save final se não for necessário
       })),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -815,7 +826,6 @@ export default function useRunning(exercise?: IExercise) {
     };
 
     await AsyncStorage.removeItem(StoragesEnum.RUNNING_DATA_KEY);
-
     await dispatch(updateGpsMetricsTemp(gpsState));
     await dispatch(fetchGpsMetricsTemp({ ignoreCheckState: true }));
     router.back();
@@ -981,22 +991,22 @@ export default function useRunning(exercise?: IExercise) {
     return poly;
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim() || !location) return;
-    setIsSearching(true);
-    setShowSearchResults(true);
-    try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&location=${location.latitude},${location.longitude}&radius=50000&key=${GOOGLE_MAPS_API_KEY}`,
-      );
-      const data = await res.json();
-      setSearchResults(data.results ? data.results.slice(0, 5) : []);
-    } catch (e) {
-      Alert.alert("Erro", "Não foi possível realizar a pesquisa");
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  // const handleSearch = async () => {
+  //   if (!searchQuery.trim() || !location) return;
+  //   setIsSearching(true);
+  //   setShowSearchResults(true);
+  //   try {
+  //     const res = await fetch(
+  //       `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(searchQuery)}&location=${location.latitude},${location.longitude}&radius=50000&key=${GOOGLE_MAPS_API_KEY}`,
+  //     );
+  //     const data = await res.json();
+  //     setSearchResults(data.results ? data.results.slice(0, 5) : []);
+  //   } catch (e) {
+  //     Alert.alert("Erro", "Não foi possível realizar a pesquisa");
+  //   } finally {
+  //     setIsSearching(false);
+  //   }
+  // };
 
   const selectDestination = async (place: any) => {
     setShowSearchResults(false);
@@ -1036,12 +1046,12 @@ export default function useRunning(exercise?: IExercise) {
     setSearchQuery("");
   };
 
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      if (searchQuery.trim().length > 2) handleSearch();
-    }, 500);
-    return () => clearTimeout(delay);
-  }, [searchQuery]);
+  // useEffect(() => {
+  //   const delay = setTimeout(() => {
+  //     if (searchQuery.trim().length > 2) handleSearch();
+  //   }, 500);
+  //   return () => clearTimeout(delay);
+  // }, [searchQuery]);
 
   // ── MapReady ────────────────────────────────────────────────────────────────
 
@@ -1095,7 +1105,7 @@ export default function useRunning(exercise?: IExercise) {
     calculateCurrentPace,
     getPaceAverage,
     getSpeedAverage,
-    handleSearch,
+    // handleSearch,
     selectDestination,
     setSearchQuery,
     setShowSearchResults,

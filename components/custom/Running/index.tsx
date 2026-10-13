@@ -134,7 +134,7 @@ export default function Running({ exercise }: RunningProps) {
         <View
           style={[styles.searchContainer, hook.customStyle.searchContainer]}
         >
-          <View
+          {/* <View
             style={[
               styles.searchInputContainer,
               hook.customStyle.searchInputContainer,
@@ -165,7 +165,7 @@ export default function Running({ exercise }: RunningProps) {
                 <Ionicons name="search" size={24} color={hook.colors.text} />
               </View>
             )}
-          </View>
+          </View> */}
 
           {hook.destination && !hook.isRunning && (
             <TouchableOpacity
@@ -273,7 +273,7 @@ export default function Running({ exercise }: RunningProps) {
       )}
 
       {/* Painel de métricas */}
-      {hook.isRunning && (
+      {/* {hook.isRunning && ( */}
         <View
           style={[styles.metricsContainer, hook.customStyle.metricsContainer]}
         >
@@ -294,7 +294,7 @@ export default function Running({ exercise }: RunningProps) {
             {hook.currentSpeed.toFixed(1)} km/h
           </Text>
         </View>
-      )}
+      {/* )} */}
 
       {/* Botão reset */}
       {!hook.isRunning && hook.elapsedTime > 0 && (
