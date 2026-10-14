@@ -87,6 +87,7 @@ export default function ExerciseTab({ hook, t }: TabProps) {
   const { checkInternetConnection } = useCheckInternetConnection();
   const { onConfirm } = useOnConfirm();
   const { unifiedGroup } = useSelector((state: RootReduxState) => state.group);
+  const { user } = useSelector((state: RootReduxState) => state.user);
   const gpsMetricsTemp = useSelector(
     (state: RootReduxState) => state.gpsMetricsTemp,
   );
@@ -112,7 +113,7 @@ export default function ExerciseTab({ hook, t }: TabProps) {
 
       const historyData: IExerciseHistory = {
         id,
-        userId: hook.trainingByUser?.userId || "",
+        userId: user?.id || "",
         academyId: hook.exercise?.academyId || "",
         exerciseId: hook.exercise?.id || "",
         completedAt: new Date(),
@@ -252,7 +253,7 @@ export default function ExerciseTab({ hook, t }: TabProps) {
 
         const exerciseHistory: IExerciseHistory = {
           id,
-          userId: hook.trainingByUser?.userId || "",
+          userId: user?.id || "",
           academyId: hook.exercise?.academyId || "",
           exerciseId: hook.exercise?.id || "",
           completedAt: new Date(),
