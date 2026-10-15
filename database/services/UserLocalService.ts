@@ -9,12 +9,12 @@ import { processLocalData } from "@/shared/utils/processLocalData";
 import { log } from "@/shared/utils/log";
 
 export class UserLocalService extends BaseLocalService<UserWithTokens> {
-  constructor(realm: Realm) {
-    super(realm, "User");
+  constructor(getRealm: () => Realm) {
+    super(getRealm, "User");
   }
 
   getUser(): UserWithTokens {
-    return this.realm.objects<UserWithTokens>("User")[0];
+    return this.getRealm().objects<UserWithTokens>("User")[0];
   }
 
   updateUserTokens(data: RefreshTokenData): UserWithTokens | null {
@@ -34,7 +34,7 @@ export class UserLocalService extends BaseLocalService<UserWithTokens> {
       log("Processed User Data for Local Storage:", processedData);
 
       // Buscar usuário existente
-      const existingUser = this.realm.objects<UserWithTokens>("User")[0];
+      const existingUser = this.getRealm().objects<UserWithTokens>("User")[0];
 
       // Se existe um usuário
       if (existingUser) {
@@ -42,7 +42,7 @@ export class UserLocalService extends BaseLocalService<UserWithTokens> {
         if (existingUser.email === processedData.email) {
           log("Atualizando usuário existente:", existingUser.id);
           this.createOrUpdate(existingUser.id.toString(), processedData);
-          return this.realm.objects<UserWithTokens>("User")[0];
+          return this.getRealm().objects<UserWithTokens>("User")[0];
         }
 
         // Se é um usuário diferente, deletar o antigo
@@ -52,9 +52,9 @@ export class UserLocalService extends BaseLocalService<UserWithTokens> {
 
       // Criar novo usuário (seja primeiro login ou após deletar o antigo)
       let savedUser: UserWithTokens;
-      this.realm.write(() => {
+      this.getRealm().write(() => {
         log("Criando novo usuário:", processedData.id);
-        savedUser = this.realm.create<UserWithTokens>(
+        savedUser = this.getRealm().create<UserWithTokens>(
           "User",
           processedData,
           Realm.UpdateMode.Modified, // Permite update se já existir com mesmo ID
@@ -83,9 +83,9 @@ export class UserLocalService extends BaseLocalService<UserWithTokens> {
 
   resetAll() {
     log("Resetando dados do usuário local...");
-    const allUsers = this.realm.objects<UserWithTokens>("User");
-    this.realm.write(() => {
-      this.realm.delete(allUsers);
+    const allUsers = this.getRealm().objects<UserWithTokens>("User");
+    this.getRealm().write(() => {
+      this.getRealm().delete(allUsers);
     });
     log("Dados do usuário local resetados com sucesso.");
   }

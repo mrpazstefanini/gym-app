@@ -27,7 +27,6 @@ import { fetchGroups } from "@/redux/actions/groupActions";
 import { fetchGpsMetricsTemp } from "@/redux/actions/gpsMetricsTempLocalActions";
 import { useRealm } from "@realm/react";
 import { AcademyLocalService } from "@/database/services/AcademyLocalService";
-import { ExerciseByUserLocalService } from "@/database/services/ExerciseByUserLocalService";
 import { ExerciseHistoryLocalService } from "@/database/services/ExerciseHistoryLocalService";
 import { ExerciseLocalService } from "@/database/services/ExerciseLocalService";
 import { GpsMetricsTempLocalService } from "@/database/services/GpsMetricsTempLocalService";
@@ -94,15 +93,14 @@ export const AppInitProvider: React.FC<AppInitProviderProps> = ({
     if (!realm) return null;
 
     return {
-      academyLocalService: new AcademyLocalService(realm),
-      exerciseLocalService: new ExerciseLocalService(realm),
-      userLocalService: new UserLocalService(realm),
-      trainingLocalService: new TrainingLocalService(realm),
-      exerciseHistoryLocalService: new ExerciseHistoryLocalService(realm),
-      exerciseByUserLocalService: new ExerciseByUserLocalService(realm),
-      trainingByUserLocalService: new TrainingByUserLocalService(realm),
-      groupLocalService: new GroupLocalService(realm),
-      gpsMetricsTempLocalService: new GpsMetricsTempLocalService(realm),
+      academyLocalService: new AcademyLocalService(() => realm),
+      exerciseLocalService: new ExerciseLocalService(()=>realm),
+      userLocalService: new UserLocalService(()=>realm),
+      trainingLocalService: new TrainingLocalService(()=>realm),
+      exerciseHistoryLocalService: new ExerciseHistoryLocalService(()=>realm),
+      trainingByUserLocalService: new TrainingByUserLocalService(()=>realm),
+      groupLocalService: new GroupLocalService(()=>realm),
+      gpsMetricsTempLocalService: new GpsMetricsTempLocalService(()=>realm),
     };
   }, [realm]);
 

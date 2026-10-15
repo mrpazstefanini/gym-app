@@ -98,7 +98,7 @@ export const updateExercise = createAsyncThunk<IExercise | null, ApiRequestType<
                 if (!res) {
                     return rejectWithValue('Failed to update exercise in local database');
                 }
-                return res;
+                return JSON.parse(JSON.stringify(res)) as IExercise;
             }
 
             return null;

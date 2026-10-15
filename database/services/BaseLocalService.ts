@@ -1,97 +1,100 @@
 // src/database/services/BaseService.ts
-import { IDefaultEntityProperties } from '@/shared/interfaces/IDefaultEntityProperties';
-import { generateId } from '@/shared/utils/generateId';
-import { Realm } from '@realm/react';
-import { v4 as uuidv4 } from 'uuid';
+import { IDefaultEntityProperties } from "@/shared/interfaces/IDefaultEntityProperties";
+import { generateId } from "@/shared/utils/generateId";
+import { Realm } from "@realm/react";
+import { v4 as uuidv4 } from "uuid";
 
 type IdType<T> = T[keyof T];
 
-export class BaseLocalService<T extends IDefaultEntityProperties & { id: IdType<T> }> {
-    protected realm: Realm;
-    protected schemaName: string;
+export class BaseLocalService<
+  T extends IDefaultEntityProperties & { id: IdType<T> },
+> {
+  protected getRealm: () => Realm;
+  protected schemaName: string;
 
-    constructor(realm: Realm, schemaName: string) {
-        this.realm = realm;
-        this.schemaName = schemaName;
-    }
+  constructor(getRealm: () => Realm, schemaName: string) {
+    this.getRealm = getRealm;
+    this.schemaName = schemaName;
+  }
 
-    // Gerar um novo ID único
-    generateId(): string {
-        return uuidv4();
-    }
+  // Gerar um novo ID único
+  generateId(): string {
+    return uuidv4();
+  }
 
-    // Criar uma nova entidade
-    create(data: Partial<T>): T {
-        let result: T;
+  // Criar uma nova entidade
+  create(data: Partial<T>): T {
+    let result: T;
 
-        this.realm.write(() => {
-            result = this.realm.create(this.schemaName, {
-                id: generateId(),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                isDeleted: false,
-                ...data
-            }) as unknown as T;
-        });
+    this.getRealm().write(() => {
+      result = this.getRealm().create(this.schemaName, {
+        id: generateId(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isDeleted: false,
+        ...data,
+      }) as unknown as T;
+    });
 
-        return result!;
-    }
+    return result!;
+  }
 
-    // Obter todas as entidades não excluídas
-    getAll(): T[] {
-        return Array.from(
-            this.realm.objects<T>(this.schemaName)
-                .filtered('isDeleted == false')
-                .sorted('createdAt', true)
-        );
-    }
+  // Obter todas as entidades não excluídas
+  getAll(): T[] {
+    return Array.from(
+      this.getRealm()
+        .objects<T>(this.schemaName)
+        .filtered("isDeleted == false")
+        .sorted("createdAt", true),
+    );
+  }
 
-    // Obter uma entidade por ID
-    getById(id: IdType<T>): T | null {
-        const result = this.realm.objectForPrimaryKey<T>(this.schemaName, id);
-        return result && !result.isDeleted ? result : null;
-    }
+  // Obter uma entidade por ID
+  getById(id: IdType<T>): T | null {
+    const result = this.getRealm().objectForPrimaryKey<T>(this.schemaName, id);
+    return result && !result.isDeleted ? result : null;
+  }
 
-    // Atualizar uma entidade
-    createOrUpdate(id: IdType<T>, data: Partial<T>): T | null {
-        const object = this.getById(id);
+  // Atualizar uma entidade
+  createOrUpdate(id: IdType<T>, data: Partial<T>): T | null {
+    const object = this.getById(id);
 
-        if (!object) return null;
+    if (!object) return null;
 
-        this.realm.write(() => {
-            Object.assign(object, {
-                ...data,
-                updatedAt: new Date()
-            });
-        });
+    this.getRealm().write(() => {
+      Object.assign(object, {
+        ...data,
+        updatedAt: new Date(),
+      });
+    });
 
-        return object;
-    }
+    return object;
+  }
 
-    // Excluir logicamente uma entidade
-    delete(id: IdType<T>): boolean {
-        const object = this.getById(id);
+  // Excluir logicamente uma entidade
+  delete(id: IdType<T>): boolean {
+    const object = this.getById(id);
 
-        if (!object) return false;
+    if (!object) return false;
 
-        this.realm.write(() => {
-            object.isDeleted = true;
-            object.updatedAt = new Date();
-        });
+    this.getRealm().write(() => {
+      object.isDeleted = true;
+      object.updatedAt = new Date();
+    });
 
-        return true;
-    }
+    return true;
+  }
 
-    // Excluir permanentemente uma entidade
-    hardDelete(id: IdType<T>): boolean {
-        const object = this.realm.objectForPrimaryKey<T>(this.schemaName, id);
+  // Excluir permanentemente uma entidade
+  hardDelete(id: IdType<T>): boolean {
+    const object = this.getRealm().objectForPrimaryKey<T>(this.schemaName, id);
 
-        if (!object) return false;
+    if (!object) return false;
 
-        this.realm.write(() => {
-            this.realm.delete(object);
-        });
+    this.getRealm().write(() => {
+      this.getRealm().delete(object);
+    });
 
-        return true;
-    }
+    return true;
+  }
 }

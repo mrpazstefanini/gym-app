@@ -216,7 +216,7 @@ export default function ExerciseTab({ hook, t }: TabProps) {
           userNotes,
         };
 
-        dispatch(updateExercise(updatedExercise));
+        await dispatch(updateExercise(updatedExercise));
         dispatch(fetchExercise());
       },
     });

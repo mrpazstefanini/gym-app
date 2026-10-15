@@ -127,57 +127,6 @@ export class ExerciseLocal extends Realm.Object<ExerciseLocal> {
   };
 }
 
-// Esquema ExerciseByUser
-export class ExerciseByUserLocal extends Realm.Object<ExerciseByUserLocal> {
-  id!: string;
-  userId!: string;
-  academyId!: string;
-  exerciseId!: string;
-  distance?: number;
-  distanceUnit?: string; // DistanceUnitEnum
-  clientWeight?: number;
-  repetitions?: number[];
-  sets?: number;
-  duration?: number;
-  goal?: string;
-  exerciseOrientations?: string;
-  restTimeBetweenSets?: number; // in seconds
-  weekDays?: string[]; // WeekDaysEnum[]
-  userNotes?: string;
-  hasUserNotes?: boolean;
-  completed?: boolean;
-  createdAt!: Date;
-  updatedAt!: Date;
-  isDeleted!: boolean;
-
-  static schema = {
-    name: "ExerciseByUser",
-    primaryKey: "id",
-    properties: {
-      id: "string",
-      userId: "string",
-      academyId: "string",
-      exerciseId: "string",
-      distance: "float?",
-      distanceUnit: "string?",
-      clientWeight: "float?",
-      repetitions: "int[]", // Updated to be an array of numbers
-      sets: "int?",
-      duration: "int?",
-      goal: "string?",
-      completed: "bool?",
-      exerciseOrientations: "string?",
-      restTimeBetweenSets: "int?",
-      weekDays: "string[]",
-      userNotes: "string?",
-      hasUserNotes: "bool?",
-      createdAt: "date",
-      updatedAt: "date",
-      isDeleted: "bool",
-    },
-  };
-}
-
 export class ExerciseHistoryLocal extends Realm.Object<IExerciseHistory> {
   id!: string;
 
@@ -431,6 +380,7 @@ export class GpsMetricsTempLocal extends Realm.Object<GpsMetricsTempLocal> {
   startLocation!: LocationObjectCoords | null;
   endLocation!: LocationObjectCoords | null;
   routePoints!: Realm.List<LocationObjectCoords>;
+  timestamp!: number;
   isDeleted!: boolean;
   createdAt!: Date;
   updatedAt!: Date;
@@ -450,7 +400,7 @@ export class GpsMetricsTempLocal extends Realm.Object<GpsMetricsTempLocal> {
       startLocation: "LocationObjectCoords?",
       endLocation: "LocationObjectCoords?",
       routePoints: "LocationObjectCoords[]",
-      timestamp: { type: "int", default: Date.now },
+      timestamp: { type: "int" as const, default: Date.now },
       isDeleted: "bool",
       createdAt: "date",
       updatedAt: "date",
@@ -465,7 +415,6 @@ export const schemas = [
   AcademyLocal,
   TrainingLocal,
   ExerciseLocal,
-  ExerciseByUserLocal,
   ExerciseHistoryLocal,
   GroupLocal,
   PaymentInfoLocal,

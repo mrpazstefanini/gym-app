@@ -6,13 +6,13 @@ import { log } from "@/shared/utils/log";
 import { generateId } from "@/shared/utils/generateId";
 
 export class GpsMetricsTempLocalService extends BaseLocalService<IGpsMetricsTemp> {
-  constructor(realm: Realm) {
-    super(realm, "GpsMetricsTemp");
+  constructor(getRealm: () => Realm) {
+    super(getRealm, "GpsMetricsTemp");
   }
 
   getByAcademy(academyId: string): IGpsMetricsTemp[] {
     return Array.from(
-      this.realm
+      this.getRealm()
         .objects<IGpsMetricsTemp>("GpsMetricsTemp")
         .filtered("academyId == $0 AND isDeleted == false", academyId)
         .sorted("name"),
@@ -20,10 +20,10 @@ export class GpsMetricsTempLocalService extends BaseLocalService<IGpsMetricsTemp
   }
 
   saveList(exercises: IGpsMetricsTemp[]): void {
-    this.realm.write(() => {
+    this.getRealm().write(() => {
       exercises.forEach((exerciseByUser) => {
         const processedData = processLocalData(exerciseByUser);
-        this.realm.create(
+        this.getRealm().create(
           "GpsMetricsTemp",
           processedData,
           Realm.UpdateMode.Modified,
@@ -33,13 +33,13 @@ export class GpsMetricsTempLocalService extends BaseLocalService<IGpsMetricsTemp
   }
 
   deleteByExerciseId(exerciseId: string): boolean {
-    const itemsToDelete = this.realm
+    const itemsToDelete = this.getRealm()
       .objects<IGpsMetricsTemp>("GpsMetricsTemp")
       .filtered("exerciseId == $0", exerciseId);
 
     if (itemsToDelete.length > 0) {
-      this.realm.write(() => {
-        this.realm.delete(itemsToDelete);
+      this.getRealm().write(() => {
+        this.getRealm().delete(itemsToDelete);
       });
       return true;
     }
@@ -57,13 +57,13 @@ export class GpsMetricsTempLocalService extends BaseLocalService<IGpsMetricsTemp
       updateData,
     );
 
-    let gpsMetrics = this.realm
+    let gpsMetrics = this.getRealm()
       .objects<IGpsMetricsTemp>("GpsMetricsTemp")
       .filtered("exerciseId == $0", exerciseId)[0];
 
     let result: IGpsMetricsTemp | null = null;
 
-    this.realm.write(() => {
+    this.getRealm().write(() => {
       const existingId = gpsMetrics?.id;
       // Processa os dados SEM serialização JSON para preservar os objetos embedded
       const processedData = processLocalData(updateData, true);
@@ -80,7 +80,7 @@ export class GpsMetricsTempLocalService extends BaseLocalService<IGpsMetricsTemp
 
       if (gpsMetrics) {
         // Update existing - deleta e recria
-        this.realm.delete(gpsMetrics);
+        this.getRealm().delete(gpsMetrics);
       }
 
       // Create new
@@ -91,19 +91,18 @@ export class GpsMetricsTempLocalService extends BaseLocalService<IGpsMetricsTemp
       } as IGpsMetricsTemp;
 
       log("Creating/Recreating GPS metrics temp:", newData);
-      result = this.realm.create("GpsMetricsTemp", newData);
+      result = this.getRealm().create("GpsMetricsTemp", newData);
     });
 
     log("Result of createOrUpdate for GPS metrics temp:", result);
     return result;
   }
 
-  
   resetAll(): void {
-    this.realm.write(() => {
-      const allGroups = this.realm.objects<IGpsMetricsTemp>("GpsMetricsTemp");
+    this.getRealm().write(() => {
+      const allGroups = this.getRealm().objects<IGpsMetricsTemp>("GpsMetricsTemp");
       log("Resetting all GPS metrics temp:", allGroups);
-      this.realm.delete(allGroups);
+      this.getRealm().delete(allGroups);
     });
   }
 }

@@ -3,13 +3,13 @@ import { Realm } from "@realm/react";
 import { BaseLocalService } from "./BaseLocalService";
 
 export class AcademyLocalService extends BaseLocalService<IAcademy> {
-  constructor(realm: Realm) {
-    super(realm, "Academy");
+  constructor(getRealm: () => Realm) {
+    super(getRealm, "Academy");
   }
 
   // Métodos específicos para Academy
   getByName(name: string): IAcademy | null {
-    const academies = this.realm
+    const academies = this.getRealm()
       .objects<IAcademy>("Academy")
       .filtered("name == $0 AND isDeleted == false", name);
 
@@ -17,10 +17,10 @@ export class AcademyLocalService extends BaseLocalService<IAcademy> {
   }
 
   resetAll(): void {
-    this.realm.write(() => {
+    this.getRealm().write(() => {
       const allAcademies =
-        this.realm.objects<IAcademy>("Academy");
-      this.realm.delete(allAcademies);
+        this.getRealm().objects<IAcademy>("Academy");
+      this.getRealm().delete(allAcademies);
     });
   }
 }
