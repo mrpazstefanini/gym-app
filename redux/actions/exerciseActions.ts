@@ -23,11 +23,10 @@ type State = {
 export const fetchExercise = createAsyncThunk<Output, Input, State>(
   'exercise/fetchExercise',
   async (inputData, { getState, rejectWithValue, extra }): Promise<Output | ReturnType<typeof rejectWithValue>> => {
-
     try {
       const state: RootReduxState = getState();
 
-      // 1. Verificar no estado Redux
+      // ✅ Skip Redux cache check if ignoreCheckState is true
       if (!inputData?.ignoreCheckState) {
         const exerciseList = state.exercise.list ?? [];
         if (exerciseList.length > 0) {
@@ -36,7 +35,6 @@ export const fetchExercise = createAsyncThunk<Output, Input, State>(
         }
       }
 
-      // 2. Verificar no banco local
       const databaseLocalService = inputData?.dataBase ?? extra.getDatabaseService();
 
       if (!databaseLocalService) {
@@ -47,13 +45,10 @@ export const fetchExercise = createAsyncThunk<Output, Input, State>(
 
       if (exerciseList?.length > 0) {
         log("exercise found in the local database");
-        
-        // 🔥 Converter para objetos JS puros
         const plainList = toPlainObject(exerciseList) as Output;
         return plainList;
       }
 
-      // 3. Buscar da API
       const user = state.user?.user;
       if (!user) {
         return rejectWithValue('User not authenticated') as any;
@@ -63,7 +58,6 @@ export const fetchExercise = createAsyncThunk<Output, Input, State>(
       
       if (res?.length > 0) {
         databaseLocalService.exerciseLocalService?.saveList(res);
-        log("exercises found in the API");
         return res;
       }
 
@@ -74,7 +68,6 @@ export const fetchExercise = createAsyncThunk<Output, Input, State>(
     }
   }
 );
-
 
 export const updateExercise = createAsyncThunk<IExercise | null, ApiRequestType<IExercise & { changeOnlyLocally?: boolean }>, State>(
     'exercise/updateExercise',

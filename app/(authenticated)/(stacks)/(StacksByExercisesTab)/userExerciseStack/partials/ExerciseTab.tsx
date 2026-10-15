@@ -217,7 +217,9 @@ export default function ExerciseTab({ hook, t }: TabProps) {
         };
 
         await dispatch(updateExercise(updatedExercise));
-        dispatch(fetchExercise());
+
+        // ✅ Force re-read from local DB, bypassing Redux cache
+        await dispatch(fetchExercise({ ignoreCheckState: true }));
       },
     });
   };

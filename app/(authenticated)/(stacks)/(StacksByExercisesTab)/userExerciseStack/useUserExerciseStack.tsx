@@ -1,6 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
-import { ExtendedExerciseState } from "../../(exercisesStacks)/exerciseReducer";
 import { useSelector } from "react-redux";
 import { RootReduxState } from "@/redux";
 import { IExerciseHistory } from "@/shared/models/IExerciseHistory";
@@ -10,32 +9,41 @@ import { IExercise } from "@/shared/models/IExercise";
 
 export function useUserExerciseStack() {
   const { colors } = useCustomStyle();
-
   const { exercise: exerciseJson, trainingByUser: trainingByUserJson } =
     useLocalSearchParams();
 
+  // ✅ Get fresh data from Redux instead of relying solely on stale params
+  const { list: exerciseList } = useSelector(
+    (state: RootReduxState) => state.exercise,
+  );
   const { listExerciseHistory } = useSelector(
-    (state: RootReduxState) => state.exerciseHistory
+    (state: RootReduxState) => state.exerciseHistory,
   );
 
   const [exercise, filteredHistory] = useMemo(() => {
-    const exerciseObj = exerciseJson
+    // Parse params to get the exercise ID
+    const exerciseFromParams = exerciseJson
       ? (JSON.parse(exerciseJson as string) as IExercise)
       : undefined;
 
+    // ✅ Look up fresh data from Redux using the ID
+    const freshExercise =
+      exerciseList?.find((ex) => ex.id === exerciseFromParams?.id) ??
+      exerciseFromParams; // fallback to params if not found
+
     const filteredHistory = listExerciseHistory?.filter(
-      (history: IExerciseHistory) => history.exerciseId === exerciseObj?.id
+      (history: IExerciseHistory) => history.exerciseId === freshExercise?.id,
     ) as IExerciseHistory[];
 
-    return [exerciseObj, filteredHistory];
-  }, [exerciseJson, listExerciseHistory]);
+    return [freshExercise, filteredHistory];
+  }, [exerciseJson, exerciseList, listExerciseHistory]); // ✅ Proper dependencies
 
   const trainingByUser = useMemo(
     () =>
       trainingByUserJson
         ? (JSON.parse(trainingByUserJson as string) as ITrainingByUser)
         : undefined,
-    [trainingByUserJson]
+    [trainingByUserJson],
   );
 
   return {

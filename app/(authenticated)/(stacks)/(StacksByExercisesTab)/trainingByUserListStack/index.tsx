@@ -183,6 +183,12 @@ export default function TrainingByUserListStack() {
 
   useFocusEffect(
     useCallback(() => {
+      dispatch(fetchExercise({ ignoreCheckState: true }));
+    }, [dispatch]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
       const filteredExercises = exerciseList?.filter((exercise: any) =>
         exercise.trainingIds.includes(trainingId),
       );
