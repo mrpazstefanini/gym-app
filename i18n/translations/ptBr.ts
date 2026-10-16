@@ -4,6 +4,7 @@ import { AppMessagesEnum } from "@/shared/enum/AppMessagesEnum";
 
 export const ptBrAppMessages: Record<AppMessagesEnum, string> = {
   //#region General Messages
+  [AppMessagesEnum.APP_VERSION]: "Versão",
   [AppMessagesEnum.BACK]: "Voltar",
   [AppMessagesEnum.TRY]: "Tentar",
   [AppMessagesEnum.NOT]: "Não",

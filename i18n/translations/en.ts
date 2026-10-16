@@ -2,6 +2,7 @@ import { AppMessagesEnum } from "@/shared/enum/AppMessagesEnum";
 
 export const enAppMessages: Record<AppMessagesEnum, string> = {
   //#region General Messages
+  [AppMessagesEnum.APP_VERSION]: "Version",
   [AppMessagesEnum.BACK]: "Back",
   [AppMessagesEnum.TRY]: "Try",
   [AppMessagesEnum.NOT]: "No",

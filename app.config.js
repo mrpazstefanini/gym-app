@@ -5,11 +5,14 @@ module.exports = ({ config }) => {
   const stripeInitialKey = process.env.PUBLISH_KEY;
 
   console.log(`\n[app.config] ──────────────────────────────────`);
-  console.log(`[app.config] Ambiente  : ${isDev ? "🧪 DESENVOLVIMENTO" : "🔴 PRODUÇÃO"}`);
-  console.log(`[app.config] Stripe Key: ${stripeInitialKey?.substring(0, 20)}...`);
+  console.log(
+    `[app.config] Ambiente  : ${isDev ? "🧪 DESENVOLVIMENTO" : "🔴 PRODUÇÃO"}`,
+  );
+  console.log(
+    `[app.config] Stripe Key: ${stripeInitialKey?.substring(0, 20)}...`,
+  );
   console.log(`[app.config] Price ID  : ${process.env.PRICE_ID}`);
   console.log(`[app.config] ──────────────────────────────────\n`);
-
 
   return {
     ...config,
@@ -29,9 +32,12 @@ module.exports = ({ config }) => {
 
     ios: {
       supportsTablet: true,
+      // ✅ Make sure this matches EXACTLY what you register in App Store Connect
       bundleIdentifier: "com.gymapp.ios",
-      buildNumber: "1",
+      // ❌ REMOVED: buildNumber (managed by EAS remote versioning)
       infoPlist: {
+        // ✅ ADDED: Fixes encryption warning from EAS
+        ITSAppUsesNonExemptEncryption: false,
         UIBackgroundModes: ["location", "fetch"],
         NSLocationWhenInUseUsageDescription:
           "Este aplicativo usa sua localização para rastrear suas corridas.",
@@ -43,7 +49,7 @@ module.exports = ({ config }) => {
     },
 
     android: {
-      versionCode: 1,
+      // ❌ REMOVED: versionCode (managed by EAS remote versioning)
       package: "com.gymapp.android",
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
@@ -68,9 +74,9 @@ module.exports = ({ config }) => {
     },
 
     plugins: [
-      // ─── Stripe ────────────────────────────────────────────────────────────
+      // ─── Stripe ──────────────────────────────────────────────────────────
       [
-        "./plugins/withStripeInit",       // ← injeta no MainApplication.kt
+        "./plugins/withStripeInit",
         {
           publishableKey: stripeInitialKey,
         },
@@ -78,15 +84,16 @@ module.exports = ({ config }) => {
       [
         "@stripe/stripe-react-native",
         {
+          // ✅ Make sure this matches your Apple Developer merchantIdentifier
           merchantIdentifier: "merchant.com.gymapp",
           enableGooglePay: true,
         },
       ],
 
-      // ─── BuildConfig fields ────────────────────────────────────────────────
-      "./plugins/withBuildConfigFields",  // ← injeta no build.gradle
+      // ─── BuildConfig fields ──────────────────────────────────────────────
+      "./plugins/withBuildConfigFields",
 
-      // ─── Outros plugins ───────────────────────────────────────────────────
+      // ─── Outros plugins ─────────────────────────────────────────────────
       "expo-router",
       "expo-localization",
       [
@@ -132,23 +139,24 @@ module.exports = ({ config }) => {
       router: { origin: false },
       eas: { projectId: "8936a338-308b-4704-96ed-0fc65405e242" },
 
-      // ─── Ambiente ──────────────────────────────────────────────────────────
+      // ─── Ambiente ────────────────────────────────────────────────────────
       NODE_ENV: process.env.NODE_ENV || "development",
 
-      // ─── Google ────────────────────────────────────────────────────────────
+      // ─── Google ──────────────────────────────────────────────────────────
       EXPO_PUBLIC_IOS_ID: process.env.EXPO_PUBLIC_IOS_ID,
       EXPO_PUBLIC_ANDROID_ID: isDev
         ? process.env.EXPO_PUBLIC_ANDROID_ID_DEV
         : process.env.EXPO_PUBLIC_ANDROID_ID_PROD,
       EXPO_PUBLIC_WEB_ID: process.env.EXPO_PUBLIC_WEB_ID,
-      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY:
+        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
       EXPO_PUBLIC_LOG: process.env.EXPO_PUBLIC_LOG || "true",
 
-      // ─── Stripe ────────────────────────────────────────────────────────────
+      // ─── Stripe ──────────────────────────────────────────────────────────
       PRICE_ID: process.env.PRICE_ID,
       PUBLISH_KEY: process.env.PUBLISH_KEY,
 
-      // ─── URLs ──────────────────────────────────────────────────────────────
+      // ─── URLs ────────────────────────────────────────────────────────────
       BASE_URL: isDev
         ? process.env.EXPO_PUBLIC_BASE_URL_DEV
         : process.env.EXPO_PUBLIC_BASE_URL_PROD,

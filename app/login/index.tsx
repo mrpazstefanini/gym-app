@@ -6,7 +6,8 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { AppMessagesEnum } from "@/shared/enum/AppMessagesEnum";
 import { StatusBar } from "expo-status-bar";
 import useCustomStyle from "@/hooks/useCustomStyle";
-import { IOS_ID, WEB_ID } from "@/shared/constants/envConstants";
+import { appVersion, IOS_ID, WEB_ID } from "@/shared/constants/envConstants";
+import Text from "@/components/custom/Text";
 
 const backgroundImg = require("@assets/images/background.jpg");
 const logoImg = require("@assets/images/google-logo.png");
@@ -23,7 +24,6 @@ export default function Login() {
   const { handleGoogleSignIn } = useLogin();
   const { t } = useTranslation();
 
-
   return (
     <>
       <StatusBar style={theme} backgroundColor="transparent" />
@@ -39,9 +39,8 @@ export default function Login() {
             imageSource={logoImg}
             onPress={handleGoogleSignIn}
           />
-
-
         </View>
+          <Text style={styles.versionText}>{t(AppMessagesEnum.APP_VERSION)}: {appVersion}</Text>
       </ImageBackground>
     </>
   );
@@ -60,8 +59,7 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
   },
-  text: {
-    color: "white",
-    fontSize: 24,
-  },
+  versionText: {
+    textAlign: "center",
+  }
 });

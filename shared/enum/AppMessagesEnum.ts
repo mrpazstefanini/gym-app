@@ -1,5 +1,6 @@
 export enum AppMessagesEnum {
   //#region General Messages
+  APP_VERSION = "APP_VERSION",
   BACK = "BACK",
   TRY = "TRY",
   NOT = "NOT",

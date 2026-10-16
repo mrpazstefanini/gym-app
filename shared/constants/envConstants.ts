@@ -1,6 +1,9 @@
 // shared/constants/envConstants.ts
 import Constants from 'expo-constants';
 
+
+export const appVersion = Constants.expoConfig?.version || '0.0.0';
+
 // ─── Helper ───────────────────────────────────────────────────────────────────
 const getExtra = (key: string): string  => {
   const fromExpoConfig = (
