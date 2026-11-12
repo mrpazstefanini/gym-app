@@ -42,3 +42,8 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Service Account
+config/serviceAccountKey.json
+serviceAccountKey.json
+*.json

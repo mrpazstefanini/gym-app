@@ -17,7 +17,7 @@ help:
 ############################################################################### Project support
 remoteAndroidBuildAPK: # make remoteAndroidBuildAPK message="something"
 	@echo "Building the project remotely..."
-	@eas build -p android --profile preview --message "$(message)"
+	@npx eas-cli build -p android --profile preview --message "$(message)"
 
 setNote20:
 	@echo "Setting Node.js version to 20..."
@@ -25,7 +25,7 @@ setNote20:
 
 remoteBuildAAB: # make remoteBuildAAB message="something"
 	@echo "Building the project remotely..."
-	@eas build -p android --profile production --message "$(message)"
+	@npx eas-cli build -p android --profile production --message "$(message)"
 
 buildProduction:
 	@echo "Building the project locally..."
@@ -107,7 +107,7 @@ cleanAndroid:
 	@Remove-Item -Recurse -Force android\app\build
 	@Remove-Item -Recurse -Force android\build
 	
-reset:
+reset: # @Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 	@make clean
 	@npm install --legacy-peer-deps --force
 
@@ -164,3 +164,6 @@ build-dev:
 	@Remove-Item -Recurse -Force android\build;
 	@reset;
 	@./build-apk.bat
+
+get-credentials:
+	@npx eas-cli credentials --platform android
