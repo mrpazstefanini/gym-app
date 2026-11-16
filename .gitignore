@@ -39,6 +39,9 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+.env.development
+.env.production
 
 # typescript
 *.tsbuildinfo
@@ -47,3 +50,7 @@ yarn-error.*
 config/serviceAccountKey.json
 serviceAccountKey.json
 *.json
+config/google-services.dev.json
+config/google-services.prod.json
+config/serviceAccountKey.dev.json
+config/serviceAccountKey.prod.json

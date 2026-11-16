@@ -1,21 +1,29 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
+import {
+  FIREBASE_API_KEY,
+  FIREBASE_PROJECT_ID_CONFIG,
+  FIREBASE_AUTH_DOMAIN,
+  FIREBASE_STORAGE_BUCKET,
+  FIREBASE_MESSAGING_SENDER_ID,
+  FIREBASE_APP_ID,
+  FIREBASE_MEASUREMENT_ID,
+} from "../shared/constants/envConstants";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyB1MX4UbL09aX9tLFSrxOw2g6vVyOZArcI",
-  authDomain: "august-gym-app.firebaseapp.com",
-  projectId: "august-gym-app",
-  storageBucket: "august-gym-app.firebasestorage.app",
-  messagingSenderId: "799815926380",
-  appId: "1:799815926380:web:015b12a1765e73c71f8e49",
-  measurementId: "G-LHBB352VHN",
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  projectId: FIREBASE_PROJECT_ID_CONFIG,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID,
+  measurementId: FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase
@@ -24,11 +32,3 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const storage = getStorage(app);
-
-/*
-🔹 Quando esse warning aparece?
-
-Se você usar getAuth(app) direto no React Native, o Firebase Auth não sabe onde persistir e cai no modo “memory persistence”.
-
-A correção é justamente usar initializeAuth + getReactNativePersistence.
-*/  

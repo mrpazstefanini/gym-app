@@ -315,6 +315,12 @@ export default function useRunning(exercise?: IExercise) {
 
       const stored: RunningData = JSON.parse(raw);
 
+      // const isStale = Date.now() - stored.lastUpdate > 24 * 60 * 60 * 1000;
+      // if (isStale) {
+      //   await AsyncStorage.removeItem(StoragesEnum.RUNNING_DATA_KEY);
+      //   return;
+      // }
+
       if (stored.isRunning !== isRunningRef.current) {
         setIsRunning(stored.isRunning);
         isRunningRef.current = stored.isRunning;
@@ -884,6 +890,11 @@ export default function useRunning(exercise?: IExercise) {
           // ✅ Agenda para reiniciar o tracking após o componente montar
           setTimeout(async () => {
             try {
+              if (AppState.currentState !== "active") {
+                console.warn("[RESTORE] App not active yet, skipping restore");
+                return;
+              }
+
               await startLocationTracking();
               Alert.alert(
                 "Corrida restaurada",
@@ -893,7 +904,7 @@ export default function useRunning(exercise?: IExercise) {
             } catch (e) {
               console.error("[RESTORE] Erro ao reiniciar tracking:", e);
             }
-          }, 1000); // ← Aguarda 1s para garantir que tudo está pronto
+          }, 3000); // ← Aguarda 1s para garantir que tudo está pronto
         }
       } catch (e) {
         console.error("[RESTORE] Erro ao restaurar estado:", e);

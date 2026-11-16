@@ -131,7 +131,29 @@ logError:
 	@adb logcat *:E | findstr /i "fatal exception error"
 
 prebuild:
-	@npx expo prebuild
+	@echo ">>> [1/6] Closing VS Code to release file locks..."
+	@taskkill /F /IM Code.exe 2>$$null; exit 0
+	@echo ">>> [2/6] Stopping Gradle daemons..."
+	@if (Test-Path android) { Push-Location android; .\gradlew --stop 2>$$null; Pop-Location }
+	@echo ">>> [3/6] Removing stale Android build artifacts..."
+	@if (Test-Path android\.gradle)   { Remove-Item -Recurse -Force android\.gradle }
+	@if (Test-Path android\app\.cxx)  { Remove-Item -Recurse -Force android\app\.cxx }
+	@if (Test-Path android\app\build) { Remove-Item -Recurse -Force android\app\build }
+	@if (Test-Path android\build)     { Remove-Item -Recurse -Force android\build }
+	@if (Test-Path android)           { Remove-Item -Recurse -Force android }
+	@if (Test-Path ios)               { Remove-Item -Recurse -Force ios }
+	@echo ">>> [4/6] Removing corrupted Gradle global caches..."
+	@if (Test-Path "$$env:USERPROFILE\.gradle\caches\8.14.3") { Remove-Item -Recurse -Force "$$env:USERPROFILE\.gradle\caches\8.14.3" }
+	@if (Test-Path "$$env:USERPROFILE\.gradle\kotlin-dsl")    { Remove-Item -Recurse -Force "$$env:USERPROFILE\.gradle\kotlin-dsl" }
+	@if (Test-Path "$$env:USERPROFILE\.gradle\daemon")        { Remove-Item -Recurse -Force "$$env:USERPROFILE\.gradle\daemon" }
+	@echo ">>> [5/6] Running expo prebuild..."
+	@npx expo prebuild --platform android --clean
+	@echo ">>> [6/6] Done! Re-open VS Code manually: code ."
+	@echo ""
+	@echo " Next steps:"
+	@echo " make dev - run on connected device"
+	@echo " make start - start Metro bundler"
+	@echo ""
 
 build:
 	@bash build-apk.bat
@@ -165,5 +187,8 @@ build-dev:
 	@reset;
 	@./build-apk.bat
 
-get-credentials:
+get-production-credentials:
 	@npx eas-cli credentials --platform android
+
+get-development-credentials:
+	@cd android; ./gradlew signingReport

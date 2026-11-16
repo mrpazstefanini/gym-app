@@ -1,22 +1,30 @@
 // app.config.js
-module.exports = ({ config }) => {
-  const isDev = process.env.NODE_ENV !== "production";
+const path = require("path");
+const dotenv = require("dotenv");
 
+// ─── Load correct .env file ───────────────────────────────────────────────────
+const ENV = process.env.NODE_ENV || "development";
+const envFile = ENV === "production" ? ".env.production" : ".env.development";
+
+dotenv.config({ path: path.resolve(__dirname, envFile) });
+
+console.log(`\n[app.config] Loading: ${envFile}`);
+
+module.exports = ({ config }) => {
+  const isDev = ENV !== "production";
   const stripeInitialKey = process.env.PUBLISH_KEY;
 
   console.log(`\n[app.config] ──────────────────────────────────`);
-  console.log(
-    `[app.config] Ambiente  : ${isDev ? "🧪 DESENVOLVIMENTO" : "🔴 PRODUÇÃO"}`,
-  );
-  console.log(
-    `[app.config] Stripe Key: ${stripeInitialKey?.substring(0, 20)}...`,
-  );
-  console.log(`[app.config] Price ID  : ${process.env.PRICE_ID}`);
+  console.log(`[app.config] Ambiente : ${isDev ? "🧪 DESENVOLVIMENTO" : "🔴 PRODUÇÃO"}`);
+  console.log(`[app.config] Firebase : ${process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID}`);
+  console.log(`[app.config] Storage : ${process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET}`);
+  console.log(`[app.config] Stripe Key: ${stripeInitialKey?.substring(0, 20)}...`);
+  console.log(`[app.config] Price ID : ${process.env.PRICE_ID}`);
   console.log(`[app.config] ──────────────────────────────────\n`);
 
   return {
     ...config,
-    name: "gym-app",
+    name: isDev ? "gym-app (dev)" : "gym-app",
     slug: "gym-app",
     version: "1.0.1",
     orientation: "portrait",
@@ -32,11 +40,8 @@ module.exports = ({ config }) => {
 
     ios: {
       supportsTablet: true,
-      // ✅ Make sure this matches EXACTLY what you register in App Store Connect
       bundleIdentifier: "com.gymapp.ios",
-      // ❌ REMOVED: buildNumber (managed by EAS remote versioning)
       infoPlist: {
-        // ✅ ADDED: Fixes encryption warning from EAS
         ITSAppUsesNonExemptEncryption: false,
         UIBackgroundModes: ["location", "fetch"],
         NSLocationWhenInUseUsageDescription:
@@ -49,7 +54,6 @@ module.exports = ({ config }) => {
     },
 
     android: {
-      // ❌ REMOVED: versionCode (managed by EAS remote versioning)
       package: "com.gymapp.android",
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
@@ -74,7 +78,7 @@ module.exports = ({ config }) => {
     },
 
     plugins: [
-      // ─── Stripe ──────────────────────────────────────────────────────────
+       "./plugins/withGoogleServices",
       [
         "./plugins/withStripeInit",
         {
@@ -84,16 +88,11 @@ module.exports = ({ config }) => {
       [
         "@stripe/stripe-react-native",
         {
-          // ✅ Make sure this matches your Apple Developer merchantIdentifier
           merchantIdentifier: "merchant.com.gymapp",
           enableGooglePay: true,
         },
       ],
-
-      // ─── BuildConfig fields ──────────────────────────────────────────────
       "./plugins/withBuildConfigFields",
-
-      // ─── Outros plugins ─────────────────────────────────────────────────
       "expo-router",
       "expo-localization",
       [
@@ -115,8 +114,7 @@ module.exports = ({ config }) => {
       [
         "@react-native-google-signin/google-signin",
         {
-          iosUrlScheme:
-            "com.googleusercontent.apps.860916687866-lrfne2vgv2s32ujts70um1c3dahfhh66",
+          iosUrlScheme: process.env.EXPO_URL_SCHEME,
         },
       ],
       [
@@ -139,22 +137,29 @@ module.exports = ({ config }) => {
       router: { origin: false },
       eas: { projectId: "8936a338-308b-4704-96ed-0fc65405e242" },
 
-      // ─── Ambiente ────────────────────────────────────────────────────────
-      NODE_ENV: process.env.NODE_ENV || "development",
+      // ─── Environment ─────────────────────────────────────────────────────
+      NODE_ENV: ENV,
+
+      // ─── Firebase ────────────────────────────────────────────────────────
+      EXPO_PUBLIC_FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      EXPO_PUBLIC_FIREBASE_PROJECT_ID: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      EXPO_PUBLIC_FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 
       // ─── Google ──────────────────────────────────────────────────────────
       EXPO_PUBLIC_IOS_ID: process.env.EXPO_PUBLIC_IOS_ID,
-      EXPO_PUBLIC_ANDROID_ID: isDev
-        ? process.env.EXPO_PUBLIC_ANDROID_ID_DEV
-        : process.env.EXPO_PUBLIC_ANDROID_ID_PROD,
+      EXPO_PUBLIC_ANDROID_ID: process.env.EXPO_PUBLIC_ANDROID_ID,
       EXPO_PUBLIC_WEB_ID: process.env.EXPO_PUBLIC_WEB_ID,
-      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY:
-        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
       EXPO_PUBLIC_LOG: process.env.EXPO_PUBLIC_LOG || "true",
 
       // ─── Stripe ──────────────────────────────────────────────────────────
       PRICE_ID: process.env.PRICE_ID,
       PUBLISH_KEY: process.env.PUBLISH_KEY,
+      IS_TEST_CARD_MODE: process.env.IS_TEST_CARD_MODE,
 
       // ─── URLs ────────────────────────────────────────────────────────────
       BASE_URL: isDev

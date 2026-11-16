@@ -15,6 +15,9 @@ import { log } from "@/shared/utils/log";
 import CustomImage from "./CustomImage";
 import { IOS_ID, WEB_ID } from "@/shared/constants/envConstants";
 
+console.log('🔧 [Login] WEB_ID being used:', WEB_ID);
+console.log('🔧 [Login] IOS_ID being used:', IOS_ID);
+
 GoogleSignin.configure({
   iosClientId: IOS_ID,
   webClientId: WEB_ID,
