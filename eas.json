@@ -10,28 +10,21 @@
       "android": {
         "buildType": "apk"
       },
-      "ios": {
-        "simulator": true
-      },
       "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": "development",
+        "EAS_BUILD": "true"
       }
     },
-
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       },
-      "ios": {
-        "simulator": false,
-        "distribution": "internal"
-      },
       "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": "production",  
+        "EAS_BUILD": "true"
       }
     },
-
     "production": {
       "autoIncrement": true,
       "android": {
@@ -41,21 +34,8 @@
         "distribution": "store"
       },
       "env": {
-        "NODE_ENV": "production"
-      }
-    }
-  },
-
-  "submit": {
-    "production": {
-      "android": {
-        "serviceAccountKeyPath": "./service-account-key.json",
-        "track": "internal"
-      },
-      "ios": {
-        "appleId": "your@apple.com",
-        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "YOUR_APPLE_TEAM_ID"
+        "NODE_ENV": "production",
+        "EAS_BUILD": "true"
       }
     }
   }

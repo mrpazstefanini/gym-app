@@ -6,6 +6,16 @@ module.exports = function withBuildConfigFields(config) {
   return withAppBuildGradle(config, (mod) => {
     let contents = mod.modResults.contents;
 
+    // plugins/withBuildConfigFields.js
+    const baseUrl =
+      process.env.NODE_ENV === "production"
+        ? process.env.EXPO_PUBLIC_BASE_URL_PROD || ""
+        : process.env.EXPO_PUBLIC_BASE_URL_DEV || "";
+
+    // ✅ Add this log
+    console.log(`[withBuildConfigFields] NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`[withBuildConfigFields] BASE_URL: ${baseUrl}`);
+
     const fields = [
       {
         type: "String",
@@ -36,7 +46,7 @@ module.exports = function withBuildConfigFields(config) {
     const buildConfigBlock = fields
       .map(
         ({ type, name, value }) =>
-          ` buildConfigField "${type}", "${name}", "\\"${value}\\""`
+          ` buildConfigField "${type}", "${name}", "\\"${value}\\""`,
       )
       .join("\n");
 
@@ -46,13 +56,13 @@ module.exports = function withBuildConfigFields(config) {
       // Substitui bloco existente
       contents = contents.replace(
         /\/\/ \[withBuildConfigFields\] AUTO-GENERATED - DO NOT EDIT[\s\S]*?\/\/ \[withBuildConfigFields\] END/,
-        `${marker}\n${buildConfigBlock}\n // [withBuildConfigFields] END`
+        `${marker}\n${buildConfigBlock}\n // [withBuildConfigFields] END`,
       );
     } else {
       // Insere dentro do defaultConfig
       contents = contents.replace(
         /(defaultConfig \{[^\}]*versionName[^\n]*\n)/,
-        `$1\n ${marker}\n${buildConfigBlock}\n // [withBuildConfigFields] END\n`
+        `$1\n ${marker}\n${buildConfigBlock}\n // [withBuildConfigFields] END\n`,
       );
     }
 

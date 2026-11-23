@@ -1,25 +1,40 @@
-// app.config.js
 const path = require("path");
 const dotenv = require("dotenv");
+const fs = require("fs");
 
-// ─── Load correct .env file ───────────────────────────────────────────────────
+const isEASBuild = process.env.EAS_BUILD === "true"
+  || !!process.env.EAS_BUILD_ID
+  || process.env.CI === "1";
+
 const ENV = process.env.NODE_ENV || "development";
-const envFile = ENV === "production" ? ".env.production" : ".env.development";
 
-dotenv.config({ path: path.resolve(__dirname, envFile) });
+console.log(`\n[app.config] ENV: ${ENV}`);
+console.log(`[app.config] isEASBuild: ${isEASBuild}`);
+console.log(`[app.config] EAS_BUILD_ID: ${process.env.EAS_BUILD_ID}`);
 
-console.log(`\n[app.config] Loading: ${envFile}`);
+if (!isEASBuild) {
+  const envFile = ENV === "production"
+    ? ".env.production"
+    : ".env.development";
+
+  const envPath = path.resolve(__dirname, envFile);
+
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    console.log(`[app.config] Loaded: ${envFile}`);
+  }
+}
 
 module.exports = ({ config }) => {
-  const isDev = ENV !== "production";
-  const stripeInitialKey = process.env.PUBLISH_KEY;
+  const isDev = process.env.NODE_ENV !== "production";
+  const stripeInitialKey = process.env.PUBLISH_KEY ?? "";
 
   console.log(`\n[app.config] ──────────────────────────────────`);
   console.log(`[app.config] Ambiente : ${isDev ? "🧪 DESENVOLVIMENTO" : "🔴 PRODUÇÃO"}`);
   console.log(`[app.config] Firebase : ${process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID}`);
   console.log(`[app.config] Storage : ${process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET}`);
-  console.log(`[app.config] Stripe Key: ${stripeInitialKey?.substring(0, 20)}...`);
-  console.log(`[app.config] Price ID : ${process.env.PRICE_ID}`);
+  console.log(`[app.config] Stripe : ${stripeInitialKey ? stripeInitialKey.substring(0, 20) + "..." : "NOT SET"}`);
+  console.log(`[app.config] BASE_URL : ${isDev ? process.env.EXPO_PUBLIC_BASE_URL_DEV : process.env.EXPO_PUBLIC_BASE_URL_PROD}`);
   console.log(`[app.config] ──────────────────────────────────\n`);
 
   return {
@@ -72,18 +87,16 @@ module.exports = ({ config }) => {
       ],
       config: {
         googleMaps: {
-          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
         },
       },
     },
 
     plugins: [
-       "./plugins/withGoogleServices",
+      "./plugins/withGoogleServices",
       [
         "./plugins/withStripeInit",
-        {
-          publishableKey: stripeInitialKey,
-        },
+        { publishableKey: stripeInitialKey },
       ],
       [
         "@stripe/stripe-react-native",
@@ -113,9 +126,7 @@ module.exports = ({ config }) => {
       ],
       [
         "@react-native-google-signin/google-signin",
-        {
-          iosUrlScheme: process.env.EXPO_URL_SCHEME,
-        },
+        { iosUrlScheme: process.env.EXPO_URL_SCHEME ?? "" },
       ],
       [
         "expo-image-picker",
@@ -136,35 +147,25 @@ module.exports = ({ config }) => {
     extra: {
       router: { origin: false },
       eas: { projectId: "8936a338-308b-4704-96ed-0fc65405e242" },
-
-      // ─── Environment ─────────────────────────────────────────────────────
-      NODE_ENV: ENV,
-
-      // ─── Firebase ────────────────────────────────────────────────────────
-      EXPO_PUBLIC_FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      EXPO_PUBLIC_FIREBASE_PROJECT_ID: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      EXPO_PUBLIC_FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
-
-      // ─── Google ──────────────────────────────────────────────────────────
-      EXPO_PUBLIC_IOS_ID: process.env.EXPO_PUBLIC_IOS_ID,
-      EXPO_PUBLIC_ANDROID_ID: process.env.EXPO_PUBLIC_ANDROID_ID,
-      EXPO_PUBLIC_WEB_ID: process.env.EXPO_PUBLIC_WEB_ID,
-      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+      NODE_ENV: process.env.NODE_ENV || "development",
+      EXPO_PUBLIC_FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? "",
+      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? "",
+      EXPO_PUBLIC_FIREBASE_PROJECT_ID: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ?? "",
+      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET ?? "",
+      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? "",
+      EXPO_PUBLIC_FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? "",
+      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID ?? "",
+      EXPO_PUBLIC_IOS_ID: process.env.EXPO_PUBLIC_IOS_ID ?? "",
+      EXPO_PUBLIC_ANDROID_ID: process.env.EXPO_PUBLIC_ANDROID_ID ?? "",
+      EXPO_PUBLIC_WEB_ID: process.env.EXPO_PUBLIC_WEB_ID ?? "",
+      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
       EXPO_PUBLIC_LOG: process.env.EXPO_PUBLIC_LOG || "true",
-
-      // ─── Stripe ──────────────────────────────────────────────────────────
-      PRICE_ID: process.env.PRICE_ID,
-      PUBLISH_KEY: process.env.PUBLISH_KEY,
-      IS_TEST_CARD_MODE: process.env.IS_TEST_CARD_MODE,
-
-      // ─── URLs ────────────────────────────────────────────────────────────
+      PRICE_ID: process.env.PRICE_ID ?? "",
+      PUBLISH_KEY: stripeInitialKey,
+      IS_TEST_CARD_MODE: process.env.IS_TEST_CARD_MODE ?? "false",
       BASE_URL: isDev
-        ? process.env.EXPO_PUBLIC_BASE_URL_DEV
-        : process.env.EXPO_PUBLIC_BASE_URL_PROD,
+        ? process.env.EXPO_PUBLIC_BASE_URL_DEV ?? ""
+        : process.env.EXPO_PUBLIC_BASE_URL_PROD ?? "",
     },
   };
 };
