@@ -27,6 +27,9 @@ remoteBuildAAB: # make remoteBuildAAB message="something"
 	@echo "Building the project remotely..."
 	@set NODE_ENV=production; npx eas-cli build -p android --profile production --message "$(message)"
 
+
+	
+
 buildProduction:
 	@echo "Building the project locally..."
 	@npm run build:prod
