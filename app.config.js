@@ -4,29 +4,85 @@ const fs = require("fs");
 // ─── Environment ──────────────────────────────────────────────────────────────
 const ENV = process.env.NODE_ENV || "development";
 const isDev = ENV !== "production";
-const skipDotenv = process.env.EXPO_NO_DOTENV === "1"
-  || process.env.EXPO_NO_DOTENV === "true";
+const skipDotenv =
+  process.env.EXPO_NO_DOTENV === "1" ||
+  process.env.EXPO_NO_DOTENV === "true";
 
-console.log(`\n[app.config] ENV : ${ENV}`);
-console.log(`[app.config] isDev : ${isDev}`);
-console.log(`[app.config] skipDotenv : ${skipDotenv}`);
+// Defina USE_LOCAL_ENV_FILE=1 para permitir o fallback local mesmo que
+// EXPO_NO_DOTENV esteja ativo. Útil no prebuild local; no EAS, deixe desativado.
+const useLocalEnvFile =
+  !skipDotenv || process.env.USE_LOCAL_ENV_FILE === "1";
 
-// ✅ Only load .env locally (not on EAS)
-if (!skipDotenv) {
+console.log(`\n[app.config] ENV: ${ENV}`);
+console.log(`[app.config] isDev: ${isDev}`);
+console.log(`[app.config] skipDotenv: ${skipDotenv}`);
+console.log(`[app.config] useLocalEnvFile: ${useLocalEnvFile}`);
+
+if (useLocalEnvFile) {
   const dotenv = require("dotenv");
   const envFile = isDev ? ".env.development" : ".env.production";
   const envPath = path.resolve(__dirname, envFile);
 
-  if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath });
-    console.log(`[app.config] Loaded: ${envFile}`);
+  if (!fs.existsSync(envPath)) {
+    if (!isDev) {
+      throw new Error(`[app.config] Arquivo obrigatório não encontrado: ${envFile}`);
+    }
+
+    console.warn(`[app.config] Arquivo não encontrado: ${envFile}`);
   } else {
-    console.warn(`[app.config] Warning: ${envFile} not found`);
+    const fileVars = dotenv.parse(fs.readFileSync(envPath));
+    const loadedVars = [];
+
+    // Só usa o arquivo para variáveis ausentes ou vazias.
+    // Valores já fornecidos pelo ambiente do EAS/processo são preservados.
+    for (const [key, value] of Object.entries(fileVars)) {
+      if (!process.env[key]?.trim()) {
+        process.env[key] = value;
+        loadedVars.push(key);
+      }
+    }
+
+    console.log(`[app.config] Loaded fallback: ${envFile}`);
+    console.log(`[app.config] Variables filled from file: ${loadedVars.length}`);
   }
+} else {
+  console.log("[app.config] Usando variáveis fornecidas pelo ambiente do EAS.");
 }
 
-console.log(`[app.config] PUBLISH_KEY: ${process.env.PUBLISH_KEY?.substring(0, 20)}...`);
-console.log(`[app.config] BASE_URL : ${isDev ? process.env.EXPO_PUBLIC_BASE_URL_DEV : process.env.EXPO_PUBLIC_BASE_URL_PROD}`);
+// Validação das variáveis essenciais para o build Android de produção.
+if (!isDev) {
+  const requiredVars = [
+    "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY",
+    "EXPO_PUBLIC_FIREBASE_API_KEY",
+    "EXPO_PUBLIC_FIREBASE_PROJECT_ID",
+    "EXPO_PUBLIC_WEB_ID",
+    "EXPO_PUBLIC_ANDROID_ID",
+    "EXPO_PUBLIC_BASE_URL_PROD",
+    "PUBLISH_KEY",
+  ];
+
+  const missingVars = requiredVars.filter(
+    (key) => !process.env[key]?.trim(),
+  );
+
+  if (missingVars.length > 0) {
+    throw new Error(
+      `[app.config] Variáveis de produção ausentes ou vazias: ${missingVars.join(", ")}`,
+    );
+  }
+
+  console.log("[app.config] Variáveis obrigatórias de produção presentes.");
+  console.log(
+    `[app.config] Google Maps API key: ${ process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ? "presente" : "ausente" }`,
+  );
+  console.log(
+    `[app.config] PUBLISH_KEY: ${ process.env.PUBLISH_KEY ? "presente" : "ausente" }`,
+  );
+}
+
+console.log(
+  `[app.config] BASE_URL: ${ isDev ? process.env.EXPO_PUBLIC_BASE_URL_DEV || "ausente" : process.env.EXPO_PUBLIC_BASE_URL_PROD || "ausente" }`,
+);
 
 module.exports = ({ config }) => {
   const stripeInitialKey = process.env.PUBLISH_KEY;
@@ -88,10 +144,7 @@ module.exports = ({ config }) => {
 
     plugins: [
       "./plugins/withGoogleServices",
-      [
-        "./plugins/withStripeInit",
-        { publishableKey: stripeInitialKey },
-      ],
+      ["./plugins/withStripeInit", { publishableKey: stripeInitialKey }],
       [
         "@stripe/stripe-react-native",
         {
@@ -140,19 +193,27 @@ module.exports = ({ config }) => {
 
     extra: {
       router: { origin: false },
-    eas: { projectId: "8936a338-308b-4704-96ed-0fc65405e242" },
+      eas: { projectId: "8936a338-308b-4704-96ed-0fc65405e242" },
       NODE_ENV: ENV,
-      EXPO_PUBLIC_FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      EXPO_PUBLIC_FIREBASE_PROJECT_ID: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      EXPO_PUBLIC_FIREBASE_APP_ID: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
-      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
+      EXPO_PUBLIC_FIREBASE_API_KEY:
+        process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+      EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN:
+        process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      EXPO_PUBLIC_FIREBASE_PROJECT_ID:
+        process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+      EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET:
+        process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:
+        process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      EXPO_PUBLIC_FIREBASE_APP_ID:
+        process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+      EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID:
+        process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
       EXPO_PUBLIC_IOS_ID: process.env.EXPO_PUBLIC_IOS_ID,
       EXPO_PUBLIC_ANDROID_ID: process.env.EXPO_PUBLIC_ANDROID_ID,
       EXPO_PUBLIC_WEB_ID: process.env.EXPO_PUBLIC_WEB_ID,
-      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
+      EXPO_PUBLIC_GOOGLE_MAPS_API_KEY:
+        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
       EXPO_PUBLIC_LOG: process.env.EXPO_PUBLIC_LOG || "true",
       PRICE_ID: process.env.PRICE_ID,
       PUBLISH_KEY: process.env.PUBLISH_KEY,

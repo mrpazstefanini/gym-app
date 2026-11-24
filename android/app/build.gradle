@@ -96,10 +96,10 @@ android {
         versionName "1.0.1"
 
  // [withBuildConfigFields] AUTO-GENERATED - DO NOT EDIT
- buildConfigField "String", "STRIPE_PUBLISHABLE_KEY", "\"\""
- buildConfigField "String", "STRIPE_PRICE_ID", "\"\""
- buildConfigField "String", "GOOGLE_MAPS_API_KEY", "\"\""
- buildConfigField "String", "BASE_URL", "\"\""
+ buildConfigField "String", "STRIPE_PUBLISHABLE_KEY", "\"pk_live_51TdG131mWsVRKY9DY4ZpBLR8CBIKLameUQ7b0XRNiaGBkD4Wz6YH3OarLkdUKqBVrbYEQnqpFvT0gz1MV8blWH2800hgYOBKlZ\""
+ buildConfigField "String", "STRIPE_PRICE_ID", "\"price_1U2xL71mWsVRKY9DFKIYafnM\""
+ buildConfigField "String", "GOOGLE_MAPS_API_KEY", "\"AIzaSyD5hKjHm7N_56wLMLzOTPxojSqWzzF-row\""
+ buildConfigField "String", "BASE_URL", "\"https://gym-api-two.vercel.app/\""
  // [withBuildConfigFields] END
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""

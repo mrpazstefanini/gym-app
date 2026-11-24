@@ -116,7 +116,7 @@ reset: # @Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 
 logProduction:
 	@echo "Log production"
-	@adb logcat *:S ReactNativeJS:V
+	@adb logcat -v time AndroidRuntime:E ReactNativeJS:V ExpoModulesCore:V *:S
 
 logErrorsByPackage:
 	@adb logcat *:E | findstr /i "com.gymapp.android"
@@ -150,7 +150,7 @@ prebuild:
 	@if (Test-Path "$$env:USERPROFILE\.gradle\kotlin-dsl")    { Remove-Item -Recurse -Force "$$env:USERPROFILE\.gradle\kotlin-dsl" }
 	@if (Test-Path "$$env:USERPROFILE\.gradle\daemon")        { Remove-Item -Recurse -Force "$$env:USERPROFILE\.gradle\daemon" }
 	@echo ">>> [5/6] Running expo prebuild..."
-	@npx expo prebuild --platform android --clean
+	@$$env:NODE_ENV = "production"; $$env:USE_LOCAL_ENV_FILE = "1"; npx expo prebuild --platform android --clean
 	@echo ">>> [6/6] Done! Re-open VS Code manually: code ."
 	@echo ""
 	@echo " Next steps:"
