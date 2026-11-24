@@ -96,10 +96,10 @@ android {
         versionName "1.0.1"
 
  // [withBuildConfigFields] AUTO-GENERATED - DO NOT EDIT
- buildConfigField "String", "STRIPE_PUBLISHABLE_KEY", "\"pk_test_51TdG1J1uqh8hd1HEYJIcEo4NZuGM7a0cGma59z5xJ3VTcAXIFNAV27Gcr80PpipSpAuOTmDMX1UCbkstGJvgqI6O00t5gO0MRt\""
- buildConfigField "String", "STRIPE_PRICE_ID", "\"price_1TdGJK1uqh8hd1HEgKI8NF7o\""
- buildConfigField "String", "GOOGLE_MAPS_API_KEY", "\"AIzaSyDpgWcNEmeHRpksnFmJbenTDgVNL4s9Fh0\""
- buildConfigField "String", "BASE_URL", "\"https://gym-api-preview.vercel.app\""
+ buildConfigField "String", "STRIPE_PUBLISHABLE_KEY", "\"\""
+ buildConfigField "String", "STRIPE_PRICE_ID", "\"\""
+ buildConfigField "String", "GOOGLE_MAPS_API_KEY", "\"\""
+ buildConfigField "String", "BASE_URL", "\"\""
  // [withBuildConfigFields] END
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""

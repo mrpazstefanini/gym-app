@@ -140,7 +140,7 @@ module.exports = ({ config }) => {
 
     extra: {
       router: { origin: false },
-      eas: { projectId: "8936a338-308b-4704-96ed-0fc65405e242" },
+    eas: { projectId: "8936a338-308b-4704-96ed-0fc65405e242" },
       NODE_ENV: ENV,
       EXPO_PUBLIC_FIREBASE_API_KEY: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
       EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,

@@ -25,7 +25,7 @@ export default function useLogin() {
   const handleGoogleSignIn = async () => {
     call({
       loading: true,
-      try: async (toast) => {
+      try: async (toast: any) => {
         log("Iniciando Google Sign-In...");
         await GoogleSignin.hasPlayServices();
         log("Play Services OK");
@@ -59,11 +59,14 @@ export default function useLogin() {
 
         log("Request body for backend:", requestBody);
 
-        const data: UserWithTokens = await AuthServices.createOrLogin(
-          requestBody
-        );
+        const data: UserWithTokens =
+          await AuthServices.createOrLogin(requestBody);
 
         log("User data from backend:", data);
+
+        log("Response signin-create received:", {
+          hasBackendToken: Boolean(data?.token),
+        });
 
         if (!data) {
           throw new Error(t(AppMessagesEnum.LOGIN_ERROR));
@@ -71,6 +74,7 @@ export default function useLogin() {
 
         log("Dispatching loginUser with data:", data);
         await authContext.logIn(data);
+        log('authContext.logIn concluído');
 
         await dispatch(addUser(data));
         await initializeUserData({ willFetchUser: false });
