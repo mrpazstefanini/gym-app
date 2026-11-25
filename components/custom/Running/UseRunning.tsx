@@ -27,7 +27,7 @@ export const { width, height } = Dimensions.get("window");
 
 export const WAZE_MAP_STYLE = [
   {
-    featureType: "building",
+    featureType: "landscape.man_made",
     elementType: "geometry",
     stylers: [{ visibility: "off" }],
   },
