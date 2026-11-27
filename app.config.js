@@ -1,3 +1,4 @@
+const packageJson = require("./package.json");
 const path = require("path");
 const fs = require("fs");
 
@@ -91,7 +92,7 @@ module.exports = ({ config }) => {
     ...config,
     name: isDev ? "gym-app (dev)" : "gym-app",
     slug: "gym-app",
-    version: "1.0.1",
+    version: packageJson.version,
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "gymapp",
